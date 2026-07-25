@@ -1,0 +1,63 @@
+name: Bug report
+description: Report a reproducible COLAPSO defect
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve COLAPSO. Do not include credentials, personal data, private provider output, or unpatched security details. Use private vulnerability reporting for security issues.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Player interface
+        - F1 deterministic engine
+        - Daily universe
+        - Quantum evidence tooling
+        - Documentation
+        - Build, CI, or deployment tooling
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the observed behavior and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser/OS or Node/Python versions, without user names or local paths.
+      placeholder: Edge 150 on Windows 11
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Safe supporting evidence
+      description: Add a screenshot, public run ID, or redacted log. Never paste tokens or account data.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues.
+          required: true
+        - label: This is not an undisclosed security vulnerability.
+          required: true
+        - label: I removed credentials, personal data, and private paths.
+          required: true

@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "colapso-quantum"
+version = "0.1.0"
+description = "Local simulated quantum core and provenance contracts for COLAPSO F2A"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "pydantic==2.13.4",
+  "qiskit==2.5.0",
+  "qiskit-aer==0.17.2",
+  "qiskit-ibm-runtime==0.48.0",
+]
+
+[dependency-groups]
+dev = [
+  "pytest==9.1.1",
+  "pytest-cov==7.1.0",
+  "ruff==0.15.22",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=colapso_quantum --cov-branch --cov-report=term-missing --cov-report=json:coverage.json --cov-fail-under=75"
+
+[tool.coverage.run]
+branch = true
+source = ["colapso_quantum"]
+
+[tool.coverage.report]
+fail_under = 75
+show_missing = true
+
+[tool.ruff]
+target-version = "py312"
+line-length = 128
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

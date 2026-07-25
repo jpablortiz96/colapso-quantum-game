@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">COLAPSO system architecture</title><desc id="desc">Layered architecture from preserved evidence and a compiled daily universe through the deterministic F1 engine to the React player experience and static AWS Amplify hosting.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#020617"/><stop offset="1" stop-color="#11102b"/></linearGradient>
+    <linearGradient id="cyan"><stop stop-color="#22d3ee"/><stop offset="1" stop-color="#0e7490"/></linearGradient>
+    <linearGradient id="violet"><stop stop-color="#c084fc"/><stop offset="1" stop-color="#7c3aed"/></linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000" flood-opacity=".35"/></filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0l10 5-10 5z" fill="#67e8f9"/></marker>
+    <style>.h{font:700 22px 'Segoe UI',Arial,sans-serif;fill:#f8fafc}.k{font:700 14px 'Segoe UI',Arial,sans-serif;fill:#67e8f9;letter-spacing:2px}.b{font:400 16px 'Segoe UI',Arial,sans-serif;fill:#cbd5e1}.s{font:400 14px 'Segoe UI',Arial,sans-serif;fill:#94a3b8}.line{fill:none;stroke:#67e8f9;stroke-width:3;marker-end:url(#arrow)}</style>
+  </defs>
+  <rect width="1600" height="900" rx="30" fill="url(#bg)"/>
+  <text x="80" y="76" class="k">COLAPSO / SYSTEM VIEW</text><text x="80" y="124" class="h" font-size="38">Evidence-backed, deterministic, static by design</text>
+  <text x="80" y="154" class="b">Quantum acquisition is an offline provenance pipeline. Gameplay never calls quantum hardware.</text>
+  <g filter="url(#shadow)">
+    <rect x="80" y="218" width="330" height="208" rx="24" fill="#07152e" stroke="#a855f7" stroke-opacity=".7"/>
+    <text x="112" y="258" class="k" fill="#d8b4fe">01 / EVIDENCE</text><text x="112" y="296" class="h">Preserved quantum run</text>
+    <text x="112" y="330" class="b">IBM Quantum hardware</text><text x="112" y="358" class="b">SamplerV2 + EstimatorV2</text><text x="112" y="386" class="b">Raw exports + SHA-256 hashes</text>
+    <rect x="112" y="402" width="130" height="4" rx="2" fill="url(#violet)"/>
+
+    <rect x="495" y="218" width="330" height="208" rx="24" fill="#07152e" stroke="#22d3ee" stroke-opacity=".7"/>
+    <text x="527" y="258" class="k">02 / COMPILER</text><text x="527" y="296" class="h">Daily universe artifact</text>
+    <text x="527" y="330" class="b">Accepted entropy material</text><text x="527" y="358" class="b">SHA-256 counter expansion</text><text x="527" y="386" class="b">Board + resolution plan</text>
+    <rect x="527" y="402" width="130" height="4" rx="2" fill="url(#cyan)"/>
+
+    <rect x="910" y="218" width="280" height="208" rx="24" fill="#07152e" stroke="#22d3ee" stroke-opacity=".7"/>
+    <text x="942" y="258" class="k">03 / F1 ENGINE</text><text x="942" y="296" class="h">Pure game rules</text>
+    <text x="942" y="330" class="b">Observe + collapse</text><text x="942" y="358" class="b">Move + decoherence</text><text x="942" y="386" class="b">Replay + serialization</text>
+    <rect x="942" y="402" width="130" height="4" rx="2" fill="url(#cyan)"/>
+
+    <rect x="1275" y="218" width="245" height="208" rx="24" fill="#07152e" stroke="#fbbf24" stroke-opacity=".7"/>
+    <text x="1307" y="258" class="k" fill="#fde68a">04 / PLAYER</text><text x="1307" y="296" class="h">React experience</text>
+    <text x="1307" y="330" class="b">Three play modes</text><text x="1307" y="358" class="b">Accessible controls</text><text x="1307" y="386" class="b">Offline after load</text>
+    <rect x="1307" y="402" width="130" height="4" rx="2" fill="#fbbf24"/>
+  </g>
+  <path d="M410 322H485" class="line"/><path d="M825 322H900" class="line"/><path d="M1190 322H1265" class="line"/>
+
+  <g filter="url(#shadow)">
+    <rect x="215" y="530" width="510" height="220" rx="26" fill="#061225" stroke="#334155"/>
+    <text x="250" y="572" class="k">TRUST BOUNDARY</text><text x="250" y="610" class="h">Versioned, inspectable artifacts</text>
+    <g class="b"><text x="250" y="650">• Evidence pack preserves exported results</text><text x="250" y="682">• Manifest and checksums establish integrity</text><text x="250" y="714">• Commitment binds the published universe</text></g>
+
+    <rect x="875" y="530" width="510" height="220" rx="26" fill="#061225" stroke="#334155"/>
+    <text x="910" y="572" class="k">DELIVERY BOUNDARY</text><text x="910" y="610" class="h">Static production deployment</text>
+    <g class="b"><text x="910" y="650">• Vite build produces immutable assets</text><text x="910" y="682">• AWS Amplify serves the SPA over HTTPS</text><text x="910" y="714">• No backend or cloud credential in the client</text></g>
+  </g>
+  <path d="M660 426V480H470V520" class="line"/><path d="M1398 426V480H1130V520" class="line"/>
+  <rect x="80" y="814" width="1440" height="2" fill="#1e293b"/><text x="80" y="850" class="s">Runtime invariant: the same universe artifact and action transcript produce the same F1 result.</text>
+</svg>

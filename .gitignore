@@ -1,0 +1,44 @@
+# JavaScript
+node_modules/
+frontend/dist/
+frontend/coverage/
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+backend/coverage.json
+
+# Environment and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+.aws/
+
+# AWS SAM
+.aws-sam/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+
+# AWS Amplify local deployment artifacts
+deployment/aws-amplify/.deployment-state.json
+deployment/aws-amplify/releases/
+deployment/aws-amplify/.staging/

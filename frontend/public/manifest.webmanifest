@@ -1,0 +1,25 @@
+{
+  "name": "COLAPSO — Un universo cuántico jugable",
+  "short_name": "COLAPSO",
+  "description": "Explora un universo generado a partir de evidencia de hardware cuántico real. Observa posibilidades, administra recursos y alcanza la salida.",
+  "lang": "es",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#06152d",
+  "icons": [
+    {
+      "src": "assets/colapso/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/colapso/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

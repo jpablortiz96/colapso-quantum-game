@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="600" viewBox="0 0 1600 600" role="img" aria-labelledby="title desc">
+  <title id="title">COLAPSO — a deterministic quantum puzzle game</title>
+  <desc id="desc">Original project artwork showing an observer navigating a seven by seven possibility field derived from preserved IBM Quantum evidence.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#020617"/><stop offset="0.5" stop-color="#07152e"/><stop offset="1" stop-color="#140a2d"/></linearGradient>
+    <radialGradient id="cyan"><stop stop-color="#a5f3fc"/><stop offset="0.35" stop-color="#22d3ee" stop-opacity=".9"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></radialGradient>
+    <radialGradient id="violet"><stop stop-color="#e9d5ff"/><stop offset="0.28" stop-color="#a855f7" stop-opacity=".85"/><stop offset="1" stop-color="#7c3aed" stop-opacity="0"/></radialGradient>
+    <pattern id="grid" width="54" height="54" patternUnits="userSpaceOnUse"><path d="M54 0H0V54" fill="none" stroke="#67e8f9" stroke-opacity=".08"/></pattern>
+    <filter id="glow"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0l10 5-10 5z" fill="#67e8f9"/></marker>
+  </defs>
+  <rect width="1600" height="600" rx="32" fill="url(#bg)"/>
+  <rect width="1600" height="600" rx="32" fill="url(#grid)"/>
+  <circle cx="1260" cy="112" r="250" fill="url(#cyan)" opacity=".22"/><circle cx="1090" cy="510" r="300" fill="url(#violet)" opacity=".18"/>
+  <g fill="none" stroke-linecap="round" opacity=".48"><path d="M80 500C260 370 344 148 640 116" stroke="#22d3ee"/><path d="M94 526C320 430 430 212 714 164" stroke="#a855f7"/><path d="M1110 84c180 42 250 142 368 302" stroke="#22d3ee" stroke-opacity=".32"/></g>
+  <g transform="translate(86 86)">
+    <rect width="170" height="34" rx="17" fill="#082f49" stroke="#22d3ee" stroke-opacity=".6"/>
+    <circle cx="20" cy="17" r="5" fill="#67e8f9"/><text x="36" y="22" fill="#cffafe" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" letter-spacing="2">UNIVERSE #001</text>
+    <text y="114" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="82" font-weight="800" letter-spacing="3">COLAPSO</text>
+    <text y="166" fill="#67e8f9" font-family="Segoe UI,Arial,sans-serif" font-size="23" font-weight="700" letter-spacing="4">OBSERVE. NAVIGATE. VERIFY.</text>
+    <text y="228" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="24">A deterministic puzzle game built from preserved</text>
+    <text y="262" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="24">IBM Quantum hardware evidence.</text>
+    <g transform="translate(0 316)" font-family="Segoe UI,Arial,sans-serif">
+      <rect width="202" height="54" rx="27" fill="#22d3ee"/><text x="101" y="34" text-anchor="middle" fill="#082f49" font-size="17" font-weight="800">PLAY THE UNIVERSE</text>
+      <rect x="220" width="214" height="54" rx="27" fill="#0f172a" stroke="#475569"/><text x="327" y="34" text-anchor="middle" fill="#e2e8f0" font-size="17" font-weight="700">AUDIT THE EVIDENCE</text>
+    </g>
+    <text y="430" fill="#94a3b8" font-family="Segoe UI,Arial,sans-serif" font-size="16">7×7 board  ·  deterministic replay  ·  offline gameplay  ·  MIT licensed</text>
+  </g>
+  <g transform="translate(940 92)">
+    <rect width="500" height="420" rx="30" fill="#020617" fill-opacity=".74" stroke="#22d3ee" stroke-opacity=".3"/>
+    <text x="30" y="44" fill="#a5f3fc" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" letter-spacing="2">LIVE POSSIBILITY FIELD</text>
+    <g transform="translate(38 70)">
+      <path d="M25 325H85V265H145V205H205V205H265V145H325V85H385V25" fill="none" stroke="#67e8f9" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)" marker-end="url(#arrow)" opacity=".82"/>
+      <g fill="#07152e" stroke="#334155">
+        <rect x="0" y="0" width="50" height="50" rx="10"/><rect x="60" y="0" width="50" height="50" rx="10"/><rect x="120" y="0" width="50" height="50" rx="10"/><rect x="180" y="0" width="50" height="50" rx="10"/><rect x="240" y="0" width="50" height="50" rx="10"/><rect x="300" y="0" width="50" height="50" rx="10"/><rect x="360" y="0" width="50" height="50" rx="10" stroke="#fbbf24"/>
+        <rect x="0" y="60" width="50" height="50" rx="10"/><rect x="60" y="60" width="50" height="50" rx="10"/><rect x="120" y="60" width="50" height="50" rx="10"/><rect x="180" y="60" width="50" height="50" rx="10"/><rect x="240" y="60" width="50" height="50" rx="10"/><rect x="300" y="60" width="50" height="50" rx="10" stroke="#22d3ee"/><rect x="360" y="60" width="50" height="50" rx="10"/>
+        <rect x="0" y="120" width="50" height="50" rx="10"/><rect x="60" y="120" width="50" height="50" rx="10"/><rect x="120" y="120" width="50" height="50" rx="10"/><rect x="180" y="120" width="50" height="50" rx="10"/><rect x="240" y="120" width="50" height="50" rx="10"/><rect x="300" y="120" width="50" height="50" rx="10"/><rect x="360" y="120" width="50" height="50" rx="10"/>
+        <rect x="0" y="180" width="50" height="50" rx="10"/><rect x="60" y="180" width="50" height="50" rx="10"/><rect x="120" y="180" width="50" height="50" rx="10"/><rect x="180" y="180" width="50" height="50" rx="10" stroke="#22d3ee"/><rect x="240" y="180" width="50" height="50" rx="10"/><rect x="300" y="180" width="50" height="50" rx="10"/><rect x="360" y="180" width="50" height="50" rx="10"/>
+        <rect x="0" y="240" width="50" height="50" rx="10"/><rect x="60" y="240" width="50" height="50" rx="10" stroke="#22d3ee"/><rect x="120" y="240" width="50" height="50" rx="10"/><rect x="180" y="240" width="50" height="50" rx="10"/><rect x="240" y="240" width="50" height="50" rx="10"/><rect x="300" y="240" width="50" height="50" rx="10"/><rect x="360" y="240" width="50" height="50" rx="10"/>
+        <rect x="0" y="300" width="50" height="50" rx="10" stroke="#22d3ee"/><rect x="60" y="300" width="50" height="50" rx="10"/><rect x="120" y="300" width="50" height="50" rx="10"/><rect x="180" y="300" width="50" height="50" rx="10"/><rect x="240" y="300" width="50" height="50" rx="10"/><rect x="300" y="300" width="50" height="50" rx="10"/><rect x="360" y="300" width="50" height="50" rx="10"/>
+      </g>
+      <circle cx="25" cy="325" r="19" fill="url(#cyan)" filter="url(#glow)"/><circle cx="385" cy="25" r="17" fill="none" stroke="#fbbf24" stroke-width="4"/>
+      <g fill="#67e8f9" opacity=".55"><circle cx="145" cy="85" r="4"/><circle cx="265" cy="265" r="4"/><circle cx="325" cy="205" r="4"/><circle cx="85" cy="145" r="4"/></g>
+    </g>
+  </g>
+</svg>

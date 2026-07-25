@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">COLAPSO engineering workflow with Kiro</title><desc id="desc">An original diagram describing the human-directed workflow used with Kiro for requirements, design, implementation, verification, deployment, and public release.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#020617"/><stop offset=".55" stop-color="#07152e"/><stop offset="1" stop-color="#160b2b"/></linearGradient>
+    <linearGradient id="loop"><stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a855f7"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0l10 5-10 5z" fill="#67e8f9"/></marker>
+    <style>.h{font:700 24px 'Segoe UI',Arial,sans-serif;fill:#f8fafc}.k{font:700 14px 'Segoe UI',Arial,sans-serif;fill:#67e8f9;letter-spacing:2px}.b{font:400 16px 'Segoe UI',Arial,sans-serif;fill:#cbd5e1}.s{font:400 13px 'Segoe UI',Arial,sans-serif;fill:#94a3b8}.a{fill:none;stroke:#67e8f9;stroke-width:3;marker-end:url(#arrow)}</style>
+  </defs>
+  <rect width="1600" height="900" rx="30" fill="url(#bg)"/>
+  <text x="80" y="78" class="k">ENGINEERING WORKFLOW / HUMAN-DIRECTED, AGENT-ASSISTED</text><text x="80" y="128" class="h" font-size="40">How COLAPSO was built with Kiro</text>
+  <text x="80" y="160" class="b">Decisions stayed with the developer; Kiro helped turn explicit constraints into reviewable code, evidence, and release gates.</text>
+  <g transform="translate(670 275)" filter="url(#glow)">
+    <circle cx="130" cy="130" r="116" fill="#07152e" stroke="url(#loop)" stroke-width="4"/>
+    <circle cx="130" cy="130" r="70" fill="none" stroke="#22d3ee" stroke-opacity=".35"/>
+    <path d="M65 130c35-72 95-72 130 0-35 72-95 72-130 0z" fill="none" stroke="#67e8f9" stroke-width="3"/>
+    <path d="M130 65c72 35 72 95 0 130-72-35-72-95 0-130z" fill="none" stroke="#c084fc" stroke-width="3"/>
+    <circle cx="130" cy="130" r="12" fill="#f8fafc"/>
+    <text x="130" y="286" text-anchor="middle" class="k">KIRO COLLABORATION LOOP</text>
+  </g>
+  <g>
+    <rect x="80" y="250" width="360" height="160" rx="22" fill="#07152e" stroke="#22d3ee"/><text x="112" y="288" class="k">01 / FRAME</text><text x="112" y="324" class="h">Requirements &amp; constraints</text><text x="112" y="356" class="b">Define claims, invariants, scope,</text><text x="112" y="382" class="b">acceptance gates, and evidence.</text>
+    <rect x="80" y="490" width="360" height="160" rx="22" fill="#07152e" stroke="#22d3ee"/><text x="112" y="528" class="k">02 / IMPLEMENT</text><text x="112" y="564" class="h">Small, reviewable changes</text><text x="112" y="596" class="b">Build pure rules first, then UI,</text><text x="112" y="622" class="b">tooling, docs, and deployment.</text>
+    <rect x="1160" y="250" width="360" height="160" rx="22" fill="#07152e" stroke="#a855f7"/><text x="1192" y="288" class="k" fill="#d8b4fe">03 / VERIFY</text><text x="1192" y="324" class="h">Tests &amp; evidence gates</text><text x="1192" y="356" class="b">Run deterministic tests, privacy</text><text x="1192" y="382" class="b">scans, builds, and live checks.</text>
+    <rect x="1160" y="490" width="360" height="160" rx="22" fill="#07152e" stroke="#fbbf24"/><text x="1192" y="528" class="k" fill="#fde68a">04 / SHIP</text><text x="1192" y="564" class="h">Production &amp; publication</text><text x="1192" y="596" class="b">Deploy reproducibly, capture real</text><text x="1192" y="622" class="b">proof, sanitize history, release.</text>
+  </g>
+  <path d="M440 330H640" class="a"/><path d="M440 570H615Q650 570 650 535V480" class="a"/><path d="M960 330H1150" class="a"/><path d="M950 480V535Q950 570 985 570H1150" class="a"/>
+  <g transform="translate(80 735)">
+    <rect width="1440" height="90" rx="20" fill="#080f20" stroke="#334155"/>
+    <text x="28" y="34" class="k">ACCOUNTABILITY</text><text x="28" y="63" class="b">The developer reviewed scope, scientific claims, credentials, infrastructure actions, commits, and publication. Automation supplied checks—not authority.</text>
+  </g>
+  <text x="80" y="865" class="s">Original project diagram. “Kiro” names the development environment used; this is not an official Kiro logo or Kiro-authored artwork.</text>
+</svg>

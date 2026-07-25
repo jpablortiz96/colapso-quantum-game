@@ -1,0 +1,54 @@
+name: Feature request
+description: Propose a focused product or engineering improvement
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Explain the player or contributor problem first. Proposals must preserve deterministic replay, evidence labels, scientific guardrails, and the Spanish player interface unless a separately approved product decision changes them.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What limitation or unmet need does this address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed outcome
+      description: Describe behavior and acceptance criteria, not just implementation.
+    validations:
+      required: true
+  - type: dropdown
+    id: boundary
+    attributes:
+      label: Primary boundary
+      options:
+        - Presentation only
+        - F1 engine behavior
+        - Daily-universe compilation
+        - Quantum evidence or scientific claims
+        - Documentation or contributor tooling
+        - Deployment or operations
+    validations:
+      required: true
+  - type: textarea
+    id: invariants
+    attributes:
+      label: Determinism, evidence, security, and accessibility impact
+      description: State what must remain unchanged and how the proposal can be verified.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and pull requests.
+          required: true
+        - label: I am not presenting simulated evidence as real hardware evidence.
+          required: true
+        - label: I have not included credentials, personal data, or private provider details.
+          required: true

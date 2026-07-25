@@ -1,0 +1,37 @@
+{
+  "name": "colapso",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Deterministic quantum puzzle game built from preserved IBM Quantum evidence",
+  "packageManager": "npm@11.8.0",
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "lint": "npm run lint --workspace frontend",
+    "test": "npm run test --workspace frontend",
+    "build": "npm run build --workspace frontend",
+    "scan:secrets": "node scripts/verify-step0.mjs --secrets-only",
+    "verify:step0": "node scripts/verify-step0.mjs",
+    "verify:f1": "node scripts/verify-f1.mjs",
+    "verify:f2a": "node scripts/verify-f2a.mjs",
+    "verify:f2b": "node scripts/verify-f2b.mjs",
+    "universe:build": "jiti frontend/src/daily-universe/cli.ts build",
+    "universe:verify": "jiti frontend/src/daily-universe/cli.ts verify",
+    "verify:f3": "node scripts/verify-f3.mjs",
+    "universe:sync-f4a": "node scripts/sync-f4a-universe.mjs",
+    "verify:f4a": "node scripts/verify-f4a.mjs",
+    "verify:production": "node scripts/verify-production.mjs",
+    "verify:media": "node scripts/verify-public-media.mjs",
+    "verify:public-repo": "node scripts/verify-public-repository.mjs && npm run verify:media",
+    "capture:screenshots": "node scripts/capture-production-screenshots.mjs",
+    "verify:amplify-package": "node scripts/verify-amplify-package.mjs && node --test scripts/verify-amplify-package.test.mjs",
+    "analyze:v2-difficulty": "jiti scripts/analyze-v2-difficulty.ts",
+    "playtest:v2": "npm run test --workspace frontend -- src/playtest-v2.test.tsx",
+    "check": "npm run lint && npm run test && npm run build && npm run verify:step0 && npm run verify:f1"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  }
+}

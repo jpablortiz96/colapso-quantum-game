@@ -1,0 +1,33 @@
+customHeaders:
+  - pattern: '**/*'
+    headers:
+      - key: 'Strict-Transport-Security'
+        value: 'max-age=63072000; includeSubDomains'
+      - key: 'X-Content-Type-Options'
+        value: 'nosniff'
+      - key: 'X-Frame-Options'
+        value: 'DENY'
+      - key: 'Referrer-Policy'
+        value: 'no-referrer'
+      - key: 'Permissions-Policy'
+        value: 'accelerometer=(), autoplay=(self), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()'
+      - key: 'Content-Security-Policy'
+        value: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self'; manifest-src 'self'; worker-src 'none'; frame-src 'none'; upgrade-insecure-requests"
+      - key: 'Cache-Control'
+        value: 'no-cache, no-store, must-revalidate'
+  - pattern: '/assets/*.js'
+    headers:
+      - key: 'Cache-Control'
+        value: 'public, max-age=31536000, immutable'
+  - pattern: '/assets/*.css'
+    headers:
+      - key: 'Cache-Control'
+        value: 'public, max-age=31536000, immutable'
+  - pattern: '/assets/colapso/**/*'
+    headers:
+      - key: 'Cache-Control'
+        value: 'public, max-age=86400, must-revalidate'
+  - pattern: '/manifest.webmanifest'
+    headers:
+      - key: 'Cache-Control'
+        value: 'public, max-age=3600, must-revalidate'

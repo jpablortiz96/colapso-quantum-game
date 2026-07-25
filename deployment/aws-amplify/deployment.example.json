@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "region": "us-east-1",
+  "profile": "colapso",
+  "appId": "d0000000000000",
+  "appName": "colapso-quantum-game",
+  "branch": "production",
+  "url": "https://production.d0000000000000.amplifyapp.com",
+  "lastJob": "1",
+  "lastStatus": "SUCCEED",
+  "timestampUtc": "2000-01-01T00:00:00.000Z",
+  "originCommit": "0000000000000000000000000000000000000000"
+}
