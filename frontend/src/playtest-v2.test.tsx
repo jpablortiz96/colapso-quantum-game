@@ -788,9 +788,12 @@ describe("COLAPSO V2.4 gameplay clarity", () => {
     expect(consolePanel).not.toBeNull();
     const priorities = [...consolePanel!.querySelectorAll<HTMLElement>("[data-console-priority]")]
       .map((element) => Number(element.dataset.consolePriority));
-    expect(priorities).toEqual([1, 3, 4, 5, 6, 7]);
+    expect(priorities).toEqual([1, 1, 1, 2, 2, 3]);
     expect(screen.getByLabelText("Observaciones y alerta activa")).toHaveTextContent("13");
     expect(screen.getByLabelText("Poderes cuánticos")).toBeInTheDocument();
+    const scrollRegion = screen.getByRole("region", { name: "Herramientas e información adicional" });
+    expect(scrollRegion).toHaveAttribute("tabindex", "0");
+    expect(scrollRegion).toContainElement(screen.getByText("Más telemetría").closest("details"));
     expect(screen.getByText("Más telemetría").closest("details")).not.toHaveAttribute("open");
   });
 

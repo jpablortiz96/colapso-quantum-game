@@ -5961,3 +5961,332 @@ html[data-reduced-motion="reduce"] *::after {
     display: none;
   }
 }
+
+/* COLAPSO v1.0.2: readable cockpit typography and bounded Observer Console tools. */
+.observer-console__scroll-region {
+  min-width: 0;
+}
+
+@media (min-width: 1100px) and (min-height: 600px) {
+  .cockpit-command-bar {
+    padding-block: 0.32rem;
+  }
+
+  .cockpit-command-bar .mission-hud__identity span:not(.mission-hud__signal) {
+    font-size: clamp(0.58rem, 0.56vw, 0.64rem);
+    letter-spacing: 0.09em;
+  }
+
+  .mission-hud__identity h1 {
+    font-size: clamp(0.88rem, 0.82vw, 1rem);
+    line-height: 1.18;
+  }
+
+  .cockpit-objective {
+    font-size: clamp(0.58rem, 0.54vw, 0.64rem);
+    line-height: 1.25;
+  }
+
+  .cockpit-command-bar .hud-stat dt {
+    font-size: clamp(0.56rem, 0.5vw, 0.62rem);
+    letter-spacing: 0.06em;
+  }
+
+  .cockpit-command-bar .hud-stat dd,
+  .cockpit-command-bar .hud-stat--observations dd,
+  .cockpit-command-bar .hud-stat--score dd {
+    font-size: clamp(0.98rem, 0.9vw, 1.08rem);
+  }
+
+  .cockpit-command-bar .hud-stat--turn dd {
+    font-size: clamp(0.62rem, 0.57vw, 0.7rem);
+  }
+
+  .cockpit-command-bar .hud-stat p {
+    display: block;
+    font-size: clamp(0.52rem, 0.45vw, 0.58rem);
+    line-height: 1.12;
+  }
+
+  .cockpit-command-bar .decoherence-pressure__header,
+  .cockpit-command-bar .decoherence-pressure__header strong {
+    font-size: clamp(0.54rem, 0.48vw, 0.6rem);
+  }
+
+  .cockpit-command-bar .decoherence-pressure__copy strong {
+    font-size: clamp(0.62rem, 0.56vw, 0.68rem);
+  }
+
+  .cockpit-command-bar__tools > span {
+    font-size: clamp(0.56rem, 0.5vw, 0.62rem);
+  }
+
+  .cockpit-command-bar__tools .sound-toggle,
+  .cockpit-command-bar__tools .cockpit-help {
+    font-size: clamp(0.6rem, 0.52vw, 0.66rem);
+  }
+
+  .mission-board > div:first-child .eyebrow {
+    font-size: clamp(0.58rem, 0.5vw, 0.64rem);
+  }
+
+  .mission-board h2 {
+    font-size: clamp(0.96rem, 0.88vw, 1.08rem);
+  }
+
+  .exit-direction {
+    font-size: clamp(0.6rem, 0.53vw, 0.66rem);
+  }
+
+  .mission-grid {
+    width: min(100%, calc(100dvh - 12rem));
+  }
+
+  .mission-cell__core {
+    font-size: clamp(0.66rem, 1.35vh, 0.88rem);
+  }
+
+  .mission-cell__chance {
+    right: 0.12rem;
+    bottom: 0.14rem;
+    left: 0.12rem;
+    padding: 0.1rem 0.12rem;
+    background: rgb(2 6 23 / 0.86);
+    color: rgb(241 245 249);
+    font-size: clamp(0.58rem, 1.08vh, 0.7rem);
+    font-weight: 750;
+    line-height: 1.05;
+    text-shadow: 0 1px 4px rgb(0 0 0);
+  }
+
+  .mission-cell--observer .mission-cell__core,
+  .mission-cell--exit .mission-cell__core {
+    border-color: rgb(255 255 255 / 0.22);
+    background: rgb(2 6 23 / 0.78);
+    font-size: clamp(0.62rem, 1.16vh, 0.76rem);
+    font-weight: 900;
+  }
+
+  .mission-cell--selected {
+    border-color: rgb(207 250 254);
+    outline: 1px solid rgb(165 243 252 / 0.82);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgb(103 232 249 / 0.46), inset 0 0 0 1px rgb(255 255 255 / 0.24), 0 0 26px rgb(34 211 238 / 0.34);
+  }
+
+  .mission-cell--cursor {
+    outline-width: 3px;
+    outline-color: rgb(207 250 254);
+  }
+
+  .mission-legend summary {
+    font-size: clamp(0.6rem, 0.52vw, 0.66rem);
+  }
+
+  .mission-legend__items > span {
+    gap: 0.36rem;
+    font-size: clamp(0.63rem, 0.55vw, 0.7rem);
+  }
+
+  .legend-symbol {
+    width: 1.16rem;
+    height: 1.16rem;
+  }
+
+  .observer-console {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .observer-console > .observer-console__header,
+  .observer-console > .observer-console__resources,
+  .observer-console > [data-console-priority="1"],
+  .observer-console > .action-tip {
+    flex: 0 0 auto;
+  }
+
+  .observer-console__header h2 {
+    font-size: clamp(1rem, 0.96vw, 1.14rem);
+    line-height: 1.15;
+  }
+
+  .observer-console__header .eyebrow,
+  .observer-console__status {
+    font-size: clamp(0.56rem, 0.49vw, 0.62rem);
+  }
+
+  .observer-console__resources > div span {
+    font-size: clamp(0.56rem, 0.48vw, 0.62rem);
+  }
+
+  .observer-console__resources > p strong {
+    font-size: clamp(0.76rem, 0.66vw, 0.84rem);
+  }
+
+  .observer-console__resources > p span {
+    font-size: clamp(0.61rem, 0.54vw, 0.68rem);
+    line-height: 1.42;
+  }
+
+  .observer-console__directive {
+    font-size: clamp(0.68rem, 0.59vw, 0.74rem);
+    line-height: 1.35;
+  }
+
+  .observer-console .action-button--primary {
+    min-height: 2.65rem;
+    font-size: clamp(0.82rem, 0.7vw, 0.9rem);
+  }
+
+  .observer-console__target span,
+  .observer-console__log-title {
+    font-size: clamp(0.61rem, 0.52vw, 0.67rem);
+  }
+
+  .observer-console__target strong {
+    font-size: clamp(0.82rem, 0.71vw, 0.9rem);
+  }
+
+  .observer-console__target small,
+  .observer-console .action-tip {
+    font-size: clamp(0.61rem, 0.52vw, 0.67rem);
+    line-height: 1.4;
+  }
+
+  .observer-console__scroll-region {
+    min-height: 0;
+    flex: 1 1 auto;
+    margin-top: 0.5rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-top: 1px solid rgb(103 232 249 / 0.14);
+    padding: 0.5rem 0.35rem 0.15rem 0.05rem;
+    scrollbar-color: rgb(103 232 249 / 0.58) rgb(15 23 42 / 0.72);
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scroll-padding-block: 0.5rem;
+  }
+
+  .observer-console__scroll-region:focus-visible {
+    outline: 2px solid rgb(165 243 252);
+    outline-offset: -2px;
+  }
+
+  .observer-console__scroll-region > .power-panel {
+    margin-top: 0;
+  }
+
+  .power-panel__title {
+    font-size: clamp(0.8rem, 0.7vw, 0.88rem) !important;
+  }
+
+  .power-panel--visible > header,
+  .power-panel--visible > p {
+    font-size: clamp(0.62rem, 0.54vw, 0.68rem);
+    line-height: 1.45;
+  }
+
+  .observer-console .action-button--power {
+    min-height: 2.65rem;
+    font-size: clamp(0.68rem, 0.59vw, 0.74rem);
+  }
+
+  .observer-console__scroll-region .power-panel__controls small,
+  .observer-console__scroll-region .power-panel__hint {
+    display: block;
+    min-height: 0;
+    font-size: clamp(0.58rem, 0.5vw, 0.64rem);
+    line-height: 1.38;
+  }
+
+  .observer-console__scroll-region .quantum-pulse__copy strong {
+    font-size: clamp(0.76rem, 0.66vw, 0.84rem);
+  }
+
+  .observer-console__scroll-region .quantum-pulse__copy small {
+    display: block;
+    font-size: clamp(0.58rem, 0.5vw, 0.64rem);
+    line-height: 1.4;
+  }
+
+  .observer-console__scroll-region .quantum-pulse button,
+  .observer-console__scroll-region .guided-controls button {
+    font-size: clamp(0.64rem, 0.55vw, 0.7rem);
+  }
+
+  .observer-console__scroll-region .guided-controls__step strong {
+    font-size: clamp(0.72rem, 0.62vw, 0.78rem);
+  }
+
+  .observer-console__scroll-region .guided-controls__step p,
+  .observer-console__scroll-region .guided-controls__step small,
+  .observer-console__scroll-region .guided-controls > footer span {
+    display: block;
+    font-size: clamp(0.59rem, 0.51vw, 0.65rem);
+    line-height: 1.42;
+  }
+
+  .observer-console__telemetry > summary {
+    font-size: clamp(0.72rem, 0.62vw, 0.78rem);
+  }
+
+  .observer-console__telemetry > summary small {
+    font-size: clamp(0.58rem, 0.5vw, 0.64rem);
+  }
+
+  .observer-console__telemetry-content {
+    gap: 0.75rem;
+  }
+
+  .resource-margin > div,
+  .resource-margin p,
+  .coherence-meter__header,
+  .coherence-meter__header small,
+  .tactical-details summary,
+  .keyboard-help summary {
+    font-size: clamp(0.65rem, 0.56vw, 0.72rem);
+    line-height: 1.45;
+  }
+
+  .probability-panel h3 {
+    font-size: clamp(0.94rem, 0.8vw, 1rem);
+  }
+
+  .probability-panel > div > span,
+  .probability-row > div:first-child,
+  .observer-console__log > p,
+  .help-card summary,
+  .help-card p,
+  .keyboard-help > div span,
+  .difficulty-help ul {
+    font-size: clamp(0.7rem, 0.6vw, 0.78rem);
+    line-height: 1.55;
+  }
+
+  .tactical-details dt {
+    font-size: clamp(0.61rem, 0.52vw, 0.67rem);
+  }
+
+  .tactical-details dd {
+    font-size: clamp(0.74rem, 0.64vw, 0.82rem);
+  }
+}
+
+@media (max-width: 767px) {
+  .observer-console--collapsed > .observer-console__resources {
+    display: grid;
+  }
+
+  .observer-console--collapsed > [data-console-priority="1"] {
+    display: block;
+  }
+
+  .observer-console--collapsed > .observer-console__target {
+    display: grid;
+  }
+
+  .observer-console--collapsed > .observer-console__scroll-region {
+    display: none;
+  }
+}

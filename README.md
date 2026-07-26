@@ -70,6 +70,8 @@ See [Gameplay](docs/GAMEPLAY.md) for controls, resources, powers, accessibility,
 
 During active play at supported desktop cockpit sizes (at least 1100×680), the complete 7×7 board, command telemetry, decoherence pressure, resource state, quantum powers, and primary Observer Console action share one browser viewport. Document scrolling is disabled only for that active desktop state; dialogs retain their own safe overflow. Tablet and mobile layouts keep a natural single document flow without a nested console scrollbar, while optional probabilities, coherence, event history, tactical details, help, and provenance remain available under **Más telemetría**.
 
+Gameplay labels, board probabilities, console copy, and expanded telemetry use a clearer responsive type scale. The mode, resource summary, selected objective, and primary action remain pinned in the desktop Observer Console while lower tools and expanded information scroll inside their own keyboard-focusable region when needed.
+
 The cockpit changes presentation only. Observation budgets, powers, score, decoherence cadence, hidden results, replay, keyboard semantics, and the published universe are unchanged.
 
 <table>

@@ -239,7 +239,16 @@ async function capture(client, filename, viewport = DESKTOP) {
 async function measureGameplay(client, viewport) {
   await resetExperience(client, requestedUrl ?? DEFAULT_URL, viewport);
   await startMode(client, "MODO EXPLORADOR");
-  await evaluate(client, "window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); true");
+  await evaluate(client, `(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    const telemetry = document.querySelector('.observer-console__telemetry');
+    const tactical = document.querySelector('.tactical-details');
+    const keyboard = document.querySelector('.keyboard-help');
+    if (telemetry instanceof HTMLDetailsElement) telemetry.open = true;
+    if (tactical instanceof HTMLDetailsElement) tactical.open = true;
+    if (keyboard instanceof HTMLDetailsElement) keyboard.open = true;
+    return true;
+  })()`);
   await delay(120);
   return evaluate(client, `(() => {
     const rectangle = (element) => {
@@ -247,10 +256,17 @@ async function measureGameplay(client, viewport) {
       const rect = element.getBoundingClientRect();
       return { x: Math.round(rect.x), y: Math.round(rect.y), width: Math.round(rect.width), height: Math.round(rect.height), right: Math.round(rect.right), bottom: Math.round(rect.bottom) };
     };
+    const fontSize = (element) => element instanceof HTMLElement ? Number.parseFloat(getComputedStyle(element).fontSize) : null;
     const scrollingElement = document.scrollingElement ?? document.documentElement;
     const board = document.querySelector('.mission-board');
     const consoleElement = document.querySelector('.observer-console');
+    const scrollRegion = document.querySelector('.observer-console__scroll-region');
     const primaryAction = document.querySelector('.observer-console .action-button--primary');
+    const probabilityLabel = document.querySelector('.mission-cell__chance');
+    const consoleHeading = document.querySelector('.observer-console__header h2');
+    const consoleCopy = document.querySelector('.observer-console__resources > p span');
+    const legendCopy = document.querySelector('.mission-legend__items > span');
+    const expandedEnd = document.querySelector('.observer-console__telemetry-content > :last-child');
     const cells = [...document.querySelectorAll('.mission-cell')];
     const inViewport = (element) => {
       const rect = element.getBoundingClientRect();
@@ -259,24 +275,47 @@ async function measureGameplay(client, viewport) {
     const boardRect = board?.getBoundingClientRect();
     const consoleRect = consoleElement?.getBoundingClientRect();
     const pageScrollHeight = Math.max(scrollingElement.scrollHeight, document.body.scrollHeight);
+    const pageScrollWidth = Math.max(scrollingElement.scrollWidth, document.body.scrollWidth);
     const pageScroll = pageScrollHeight > innerHeight + 1;
-    const consoleScroll = consoleElement instanceof HTMLElement && consoleElement.scrollHeight > consoleElement.clientHeight + 1;
+    const pageHorizontalScroll = pageScrollWidth > innerWidth + 1;
+    const consolePanelScroll = consoleElement instanceof HTMLElement && consoleElement.scrollHeight > consoleElement.clientHeight + 1;
+    const consoleScroll = scrollRegion instanceof HTMLElement && scrollRegion.scrollHeight > scrollRegion.clientHeight + 1;
+    if (scrollRegion instanceof HTMLElement) scrollRegion.scrollTop = scrollRegion.scrollHeight;
+    const consoleScrollRange = scrollRegion instanceof HTMLElement ? Math.max(0, scrollRegion.scrollHeight - scrollRegion.clientHeight) : 0;
+    const consoleScrollReachedEnd = scrollRegion instanceof HTMLElement && scrollRegion.scrollTop >= consoleScrollRange - 1;
+    const scrollRegionRect = scrollRegion?.getBoundingClientRect();
+    const expandedEndRect = expandedEnd?.getBoundingClientRect();
     return {
       viewport: { width: innerWidth, height: innerHeight },
       pageScrollHeight,
+      pageScrollWidth,
       pageScroll,
+      pageHorizontalScroll,
       pageOverflowY: getComputedStyle(scrollingElement).overflowY,
       board: rectangle(board),
       console: rectangle(consoleElement),
+      scrollRegion: rectangle(scrollRegion),
       cells: cells.length,
       visibleCells: cells.filter(inViewport).length,
       allCellsVisible: cells.length === 49 && cells.every(inViewport),
       completeBoardVisible: boardRect !== undefined && boardRect.top >= -1 && boardRect.bottom <= innerHeight + 1,
       primaryAction: rectangle(primaryAction),
       primaryActionVisible: primaryAction instanceof HTMLElement && inViewport(primaryAction),
+      consolePanelScroll,
       consoleScroll,
+      consoleScrollRange,
+      consoleScrollReachedEnd,
+      expandedContentReachable: scrollRegionRect !== undefined && expandedEndRect !== undefined && expandedEndRect.bottom <= scrollRegionRect.bottom + 1,
       internalAndPageScroll: pageScroll && consoleScroll,
       consoleFullyVisible: consoleRect !== undefined && consoleRect.top >= -1 && consoleRect.bottom <= innerHeight + 1,
+      expandedTelemetry: document.querySelector('.observer-console__telemetry')?.hasAttribute('open') ?? false,
+      expandedTactical: document.querySelector('.tactical-details')?.hasAttribute('open') ?? false,
+      typography: {
+        probabilityLabel: fontSize(probabilityLabel),
+        consoleHeading: fontSize(consoleHeading),
+        consoleCopy: fontSize(consoleCopy),
+        legendCopy: fontSize(legendCopy),
+      },
     };
   })()`);
 }

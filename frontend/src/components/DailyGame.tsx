@@ -566,7 +566,7 @@ function Controls() {
         <p aria-live="polite"><strong>{resourceAlert.label}</strong><span>{resourceAlert.message}</span></p>
       </section>
 
-      <div data-console-priority="3">
+      <div data-console-priority="1">
         <p className="observer-console__directive">{primary.hint}</p>
         <div className="observer-console__primary" data-tour="observe-button"><div data-tour="move-button"><motion.button
           whileHover={primary.disabled || reducedMotion ? undefined : { y: -1 }} whileTap={primary.disabled || reducedMotion ? undefined : { y: 0 }}
@@ -575,39 +575,41 @@ function Controls() {
         ><span>{primary.label}</span><span aria-hidden="true">{canMove ? "→" : canObserve ? "◉" : "◎"}</span></motion.button></div></div>
       </div>
 
-      <div className="observer-console__target" data-console-priority="4"><span>Objetivo actual</span><strong>{targetTitle}</strong><small>{targetCoordinate}</small></div>
+      <div className="observer-console__target" data-console-priority="1"><span>Objetivo actual</span><strong>{targetTitle}</strong><small>{targetCoordinate}</small></div>
       {unresolved && <p className="action-tip">{availability.powerX || availability.powerH ? "Puedes aplicar X o H antes de observar." : "Esta posibilidad está lista para observar."}</p>}
       {wall && <p className="action-tip action-tip--danger">Un muro no se puede atravesar.</p>}
 
-      <section aria-label="Poderes cuánticos" className={`power-panel power-panel--visible ${availability.powerX || availability.powerH ? "power-panel--ready" : ""}`} data-console-priority="5" data-tour="powers">
-        <header><span className="power-panel__title">Poderes cuánticos</span><span>Módulos X / H</span></header>
-        <p id="power-instruction">{powerInstruction}</p>
-        <div className="power-panel__controls">
-          <div><button aria-describedby="power-x-status power-instruction" aria-label="Poder X" className="action-button action-button--secondary action-button--power" disabled={!availability.powerX} onClick={() => { unlockGameSound(); playGameSound("powerX"); store.applyGateToSelected("X"); }} type="button"><img alt="" aria-hidden="true" className="action-button__power-icon" decoding="async" height="256" loading="lazy" src={colapsoAssets.powers.X} width="256" /><span>Poder X <kbd>X</kbd></span></button><small id="power-x-status">{availability.powerX ? "Disponible para este objetivo." : availability.powerXReason}</small></div>
-          <div><button aria-describedby="power-h-status power-instruction" aria-label="Poder H" className="action-button action-button--secondary action-button--power" disabled={!availability.powerH} onClick={() => { unlockGameSound(); playGameSound("powerH"); store.applyGateToSelected("H"); }} type="button"><img alt="" aria-hidden="true" className="action-button__power-icon" decoding="async" height="256" loading="lazy" src={colapsoAssets.powers.H} width="256" /><span>Poder H <kbd>H</kbd></span></button><small id="power-h-status">{availability.powerH ? "Disponible para este objetivo." : availability.powerHReason}</small></div>
-        </div>
-        <p className="power-panel__hint">X intercambia las probabilidades principales. H las equilibra.</p>
-      </section>
+      <div aria-label="Herramientas e información adicional" className="observer-console__scroll-region" data-console-scroll="lower" role="region" tabIndex={0}>
+        <section aria-label="Poderes cuánticos" className={`power-panel power-panel--visible ${availability.powerX || availability.powerH ? "power-panel--ready" : ""}`} data-console-priority="2" data-tour="powers">
+          <header><span className="power-panel__title">Poderes cuánticos</span><span>Módulos X / H</span></header>
+          <p id="power-instruction">{powerInstruction}</p>
+          <div className="power-panel__controls">
+            <div><button aria-describedby="power-x-status power-instruction" aria-label="Poder X" className="action-button action-button--secondary action-button--power" disabled={!availability.powerX} onClick={() => { unlockGameSound(); playGameSound("powerX"); store.applyGateToSelected("X"); }} type="button"><img alt="" aria-hidden="true" className="action-button__power-icon" decoding="async" height="256" loading="lazy" src={colapsoAssets.powers.X} width="256" /><span>Poder X <kbd>X</kbd></span></button><small id="power-x-status">{availability.powerX ? "Disponible para este objetivo." : availability.powerXReason}</small></div>
+            <div><button aria-describedby="power-h-status power-instruction" aria-label="Poder H" className="action-button action-button--secondary action-button--power" disabled={!availability.powerH} onClick={() => { unlockGameSound(); playGameSound("powerH"); store.applyGateToSelected("H"); }} type="button"><img alt="" aria-hidden="true" className="action-button__power-icon" decoding="async" height="256" loading="lazy" src={colapsoAssets.powers.H} width="256" /><span>Poder H <kbd>H</kbd></span></button><small id="power-h-status">{availability.powerH ? "Disponible para este objetivo." : availability.powerHReason}</small></div>
+          </div>
+          <p className="power-panel__hint">X intercambia las probabilidades principales. H las equilibra.</p>
+        </section>
 
-      <div data-console-priority="6"><QuantumPulseControl /></div>
-      {store.gameMode === "GUIDED" && <LazyModuleBoundary label="La orientación no pudo cargarse." onClose={store.dismissGuidance} resetKey={store.guidedStep}><Suspense fallback={<LazyFallback label="Cargando orientación…" />}><LazyGuidedJourneyControls /></Suspense></LazyModuleBoundary>}
-      <details
-        className="observer-console__telemetry"
-        data-console-priority="7"
-        onToggle={(event) => setTelemetryExpanded(event.currentTarget.open)}
-        open={telemetryExpanded || store.panel === "HELP"}
-      >
-        <summary><span>Más telemetría</span><small>Probabilidades, coherencia, eventos y ayuda</small></summary>
-        <div className="observer-console__telemetry-content">
-          {store.gameMode === "EXPLORER" && <section className={`resource-margin resource-margin--${tactical.marginStatus.toLowerCase()}`} aria-label={`Margen de recursos ${tactical.marginLabel}`}><div><span>MARGEN {tactical.marginLabel}</span><strong>{tactical.estimatedMargin >= 0 ? `+${tactical.estimatedMargin}` : tactical.estimatedMargin}</strong></div><p>{tactical.marginMessage}</p></section>}
-          <SelectedProbabilities />
-          <CoherenceMeter />
-          <div aria-live="polite" className="mission-feedback observer-console__log"><span className="observer-console__log-title">Últimos eventos</span><AnimatePresence initial={false}>{log.map((message) => <motion.p key={message} initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}>{message}</motion.p>)}</AnimatePresence></div>
-          {store.gameMode === "EXPLORER" && <details className="tactical-details"><summary>Detalles tácticos visibles</summary><dl><div><dt>Rutas potenciales</dt><dd>{tactical.potentialRoutes}</dd></div><div><dt>Distancia aproximada</dt><dd>{tactical.manhattanDistance}</dd></div><div><dt>Observaciones</dt><dd>{store.gameState.observations}</dd></div><div><dt>Margen estimado</dt><dd>{tactical.estimatedMargin}</dd></div><div><dt>Pulsos</dt><dd>{store.quantumPulses}/5</dd></div></dl></details>}
-          <Details />
-          <KeyboardHelp />
-        </div>
-      </details>
+        <div data-console-priority="2"><QuantumPulseControl /></div>
+        {store.gameMode === "GUIDED" && <div data-console-priority="2"><LazyModuleBoundary label="La orientación no pudo cargarse." onClose={store.dismissGuidance} resetKey={store.guidedStep}><Suspense fallback={<LazyFallback label="Cargando orientación…" />}><LazyGuidedJourneyControls /></Suspense></LazyModuleBoundary></div>}
+        <details
+          className="observer-console__telemetry"
+          data-console-priority="3"
+          onToggle={(event) => setTelemetryExpanded(event.currentTarget.open)}
+          open={telemetryExpanded || store.panel === "HELP"}
+        >
+          <summary><span>Más telemetría</span><small>Probabilidades, coherencia, eventos y ayuda</small></summary>
+          <div className="observer-console__telemetry-content">
+            {store.gameMode === "EXPLORER" && <section className={`resource-margin resource-margin--${tactical.marginStatus.toLowerCase()}`} aria-label={`Margen de recursos ${tactical.marginLabel}`}><div><span>MARGEN {tactical.marginLabel}</span><strong>{tactical.estimatedMargin >= 0 ? `+${tactical.estimatedMargin}` : tactical.estimatedMargin}</strong></div><p>{tactical.marginMessage}</p></section>}
+            <SelectedProbabilities />
+            <CoherenceMeter />
+            <div aria-live="polite" className="mission-feedback observer-console__log"><span className="observer-console__log-title">Últimos eventos</span><AnimatePresence initial={false}>{log.map((message) => <motion.p key={message} initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}>{message}</motion.p>)}</AnimatePresence></div>
+            {store.gameMode === "EXPLORER" && <details className="tactical-details"><summary>Detalles tácticos visibles</summary><dl><div><dt>Rutas potenciales</dt><dd>{tactical.potentialRoutes}</dd></div><div><dt>Distancia aproximada</dt><dd>{tactical.manhattanDistance}</dd></div><div><dt>Observaciones</dt><dd>{store.gameState.observations}</dd></div><div><dt>Margen estimado</dt><dd>{tactical.estimatedMargin}</dd></div><div><dt>Pulsos</dt><dd>{store.quantumPulses}/5</dd></div></dl></details>}
+            <Details />
+            <KeyboardHelp />
+          </div>
+        </details>
+      </div>
     </motion.section>
   );
 }

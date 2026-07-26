@@ -2,6 +2,24 @@
 
 All notable changes to COLAPSO are documented here. This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and intends to use semantic versioning for public releases.
 
+## [1.0.2] - 2026-07-22
+
+### Changed
+
+- Increased active-gameplay typography with responsive sizing for command metrics, board probabilities, Observer Console copy, buttons, telemetry, tactical details, and the board legend.
+- Strengthened selected-cell, keyboard-focus, `TÚ`, and `SALIDA` presentation without changing the 7×7 board dimensions.
+- Reorganized the desktop Observer Console so mode, resources, selected objective, and the primary action remain fixed above lower tools and optional information.
+
+### Fixed
+
+- Expanded powers, Guided controls, `Más telemetría`, event history, tactical details, help, and keyboard guidance remain reachable through a bounded inner console scroll region.
+- Supported desktop cockpit sizes retain the complete board and primary action with no document-level or horizontal scrolling.
+- Tablet and mobile continue to use natural page flow without a competing nested console scrollbar.
+
+### Preserved contracts
+
+- No changes to the F1 engine, Universe #001, 10/13/13 observation balance, scoring, powers, Explorer Pulse, Guided Journey, evidence, replay, AWS application identity, Amplify branch, or production URL.
+
 ## [1.0.1] - 2026-07-22
 
 ### Changed
@@ -51,5 +69,6 @@ All notable changes to COLAPSO are documented here. This project follows [Keep a
 - Deterministic expansion is not represented as new physical entropy.
 - Public resolution material is disclosed; no anti-cheat claim is made.
 
+[1.0.2]: https://github.com/jpablortiz96/colapso-quantum-game/releases/tag/v1.0.2
 [1.0.1]: https://github.com/jpablortiz96/colapso-quantum-game/releases/tag/v1.0.1
 [1.0.0]: https://github.com/jpablortiz96/colapso-quantum-game/releases/tag/v1.0.0

@@ -93,7 +93,10 @@ describe("COLAPSO V2.1 balance and guided journey", () => {
     expect(screen.getByRole("button", { name: "Poder X" })).toBeInTheDocument();
     expect(document.querySelector(".mission-sticky-hud")).toBeNull();
     const telemetry = screen.getByText("Más telemetría").closest("details");
+    const scrollRegion = screen.getByRole("region", { name: "Herramientas e información adicional" });
     expect(telemetry).not.toHaveAttribute("open");
+    expect(scrollRegion).toHaveAttribute("tabindex", "0");
+    expect(scrollRegion).toContainElement(telemetry);
     expect(document.documentElement).toHaveAttribute("data-gameplay-cockpit", "active");
 
     act(() => useDailyGameStore.getState().reset());
