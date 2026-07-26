@@ -407,7 +407,7 @@ function Board() {
           );
         })}
       </div>
-      <details className="mission-legend" open>
+      <details className="mission-legend">
         <summary><span>Leyenda de señales</span><small>8 lecturas</small></summary>
         <div className="mission-legend__items" aria-label="Leyenda del tablero">
           <span><i className="legend-symbol legend-symbol--observer" aria-hidden="true">◉</i>Observador</span>
@@ -424,8 +424,8 @@ function Board() {
   );
 }
 
-function Hud() {
-  const { gameState, messages } = useDailyGameStore();
+function CommandBar() {
+  const { gameState, messages, universe, gameMode, panel, togglePanel } = useDailyGameStore();
   const reducedMotion = useReducedMotion() ?? false;
   const energyLevel = Math.min(1, Math.max(0, gameState.energy / 5));
   const decoherencePulsing = messages.some((message) => message.toLowerCase().includes("universo colapsó"));
@@ -433,13 +433,18 @@ function Hud() {
   const remainingLabel = pressure.level === "pulse"
     ? "AHORA"
     : `${pressure.turnsRemaining} ${pressure.turnsRemaining === 1 ? "turno" : "turnos"}`;
+  const modeLabel = gameMode === "GUIDED" ? "RUTA GUIADA" : gameMode === "EXPLORER" ? "MODO EXPLORADOR" : "MISIÓN CUÁNTICA";
 
   return (
-    <section aria-label="Estado de la misión" className="mission-hud">
-      <div className="mission-hud__identity">
+    <section aria-label="Comando y estado de la misión" className="mission-hud cockpit-command-bar">
+      <header className="mission-hud__identity">
         <span className="mission-hud__signal" aria-hidden="true" />
-        <div><span>Cámara activa</span><strong>Telemetría de misión</strong></div>
-      </div>
+        <div>
+          <span>COLAPSO · Universo #{universe.universeNumber}</span>
+          <h1>Explora una ruta hacia la salida</h1>
+          <p className="cockpit-objective" data-tour="mission-goal">Llega a la salida dorada; no necesitas descubrir todo el tablero.</p>
+        </div>
+      </header>
       <dl className="mission-hud__stats">
         <motion.div className="hud-stat hud-stat--observations" animate={reducedMotion ? undefined : { opacity: 1, y: 0 }} initial={reducedMotion ? false : { opacity: 0, y: 5 }}>
           <span className="hud-stat__icon hud-stat__icon--observer" aria-hidden="true">◉</span>
@@ -468,7 +473,7 @@ function Hud() {
         data-pressure-state={pressure.level}
       >
         <div className="decoherence-pressure__header">
-          <span><i aria-hidden="true" /> PRESIÓN DE DECOHERENCIA</span>
+          <span><i aria-hidden="true" /> DECOHERENCIA</span>
           <strong>{remainingLabel}</strong>
         </div>
         <div
@@ -486,57 +491,12 @@ function Hud() {
         </div>
         <div aria-hidden="true" className="decoherence-pressure__track"><motion.span animate={{ width: `${pressure.intensity}%` }} initial={false} transition={{ duration: reducedMotion ? 0 : 0.3, ease: [0.16, 1, 0.3, 1] }} /></div>
       </aside>
+      <div className="cockpit-command-bar__tools">
+        <span>{universe.dateUtc} · {modeLabel}</span>
+        <div><SoundToggle /><button aria-expanded={panel === "HELP"} className="cockpit-help" onClick={() => togglePanel("HELP")} type="button"><span aria-hidden="true">?</span> Ayuda</button></div>
+      </div>
     </section>
   );
-}
-
-function MissionStickyBar() {
-  const store = useDailyGameStore();
-  const resourceAlert = deriveObservationAlert(store.gameState.observations);
-  const decoherencePressure = deriveDecoherencePressure(store.gameState.turn);
-  const availability = store.getActionAvailability();
-  const selected = selectedCell(store.gameState, store.selectedCell);
-  const modeLabel = store.gameMode === "EXPLORER" ? "Explorador" : store.gameMode === "GUIDED" ? "Guiada" : "Canónica";
-  const action = selected === null
-    ? { label: "Elegir objetivo", disabled: false, run: () => store.selectCell(store.keyboardCursor) }
-    : availability.move
-      ? { label: "Mover aquí", disabled: false, run: store.moveSelected }
-      : availability.observe
-        ? { label: "Observar", disabled: false, run: store.observeSelected }
-        : { label: "Cambia de objetivo", disabled: true, run: store.executePrimary };
-
-  return <section
-    aria-label="Barra de misión persistente"
-    className={`mission-sticky-hud mission-sticky-hud--${resourceAlert.level}`}
-    data-resource-alert={resourceAlert.level}
-    data-sticky="true"
-  >
-    <div className="mission-sticky-hud__observations">
-      <span>Observaciones</span>
-      <strong aria-label={`${store.gameState.observations} observaciones restantes`}>{store.gameState.observations}</strong>
-      <small>restantes</small>
-    </div>
-    <div className="mission-sticky-hud__alert" aria-live="polite">
-      <span>ALERTA DE RECURSOS · {resourceAlert.intensity}%</span>
-      <strong>{resourceAlert.label}</strong>
-      <small>{resourceAlert.message}</small>
-    </div>
-    <dl className="mission-sticky-hud__stats">
-      <div><dt>Energía</dt><dd>{store.gameState.energy}</dd></div>
-      <div><dt>Turno</dt><dd>{store.gameState.turn}</dd></div>
-      <div><dt>Cristales</dt><dd>{store.gameState.collectedCrystals.length}</dd></div>
-      <div><dt>Puntaje</dt><dd>{calculateScore(store.gameState)}</dd></div>
-      {store.gameMode === "EXPLORER" && <div><dt>Pulsos</dt><dd>{store.quantumPulses}</dd></div>}
-    </dl>
-    <div className="mission-sticky-hud__mode"><span>Modo</span><strong>{modeLabel}</strong><small>Decoherencia en {decoherencePressure.turnsRemaining}</small></div>
-    <button
-      aria-label={`Acción rápida: ${action.label}`}
-      className="mission-sticky-hud__action"
-      disabled={action.disabled}
-      onClick={() => { unlockGameSound(); if (selected === null) playGameSound("select"); action.run(); }}
-      type="button"
-    >{action.label}<span aria-hidden="true">→</span></button>
-  </section>;
 }
 
 function SelectedProbabilities() {
@@ -568,6 +528,7 @@ function SelectedProbabilities() {
 function Controls() {
   const store = useDailyGameStore();
   const [consoleExpanded, setConsoleExpanded] = useState(true);
+  const [telemetryExpanded, setTelemetryExpanded] = useState(false);
   const reducedMotion = useReducedMotion() ?? false;
   const selected = selectedCell(store.gameState, store.selectedCell);
   const availability = store.getActionAvailability();
@@ -604,7 +565,6 @@ function Controls() {
         <div><span>OBSERVACIONES RESTANTES</span><strong>{store.gameState.observations}</strong></div>
         <p aria-live="polite"><strong>{resourceAlert.label}</strong><span>{resourceAlert.message}</span></p>
       </section>
-      {store.gameMode === "EXPLORER" && <section className={`resource-margin resource-margin--${tactical.marginStatus.toLowerCase()}`} aria-label={`Margen de recursos ${tactical.marginLabel}`}><div><span>MARGEN {tactical.marginLabel}</span><strong>{tactical.estimatedMargin >= 0 ? `+${tactical.estimatedMargin}` : tactical.estimatedMargin}</strong></div><p>{tactical.marginMessage}</p></section>}
 
       <div data-console-priority="3">
         <p className="observer-console__directive">{primary.hint}</p>
@@ -630,11 +590,24 @@ function Controls() {
       </section>
 
       <div data-console-priority="6"><QuantumPulseControl /></div>
-      <SelectedProbabilities />
-      <CoherenceMeter />
       {store.gameMode === "GUIDED" && <LazyModuleBoundary label="La orientación no pudo cargarse." onClose={store.dismissGuidance} resetKey={store.guidedStep}><Suspense fallback={<LazyFallback label="Cargando orientación…" />}><LazyGuidedJourneyControls /></Suspense></LazyModuleBoundary>}
-      <div aria-live="polite" className="mission-feedback observer-console__log" data-console-priority="7"><span className="observer-console__log-title">Últimos eventos</span><AnimatePresence initial={false}>{log.map((message) => <motion.p key={message} initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}>{message}</motion.p>)}</AnimatePresence></div>
-      {store.gameMode === "EXPLORER" && <details className="tactical-details" data-console-priority="8"><summary>Detalles tácticos visibles</summary><dl><div><dt>Rutas potenciales</dt><dd>{tactical.potentialRoutes}</dd></div><div><dt>Distancia aproximada</dt><dd>{tactical.manhattanDistance}</dd></div><div><dt>Observaciones</dt><dd>{store.gameState.observations}</dd></div><div><dt>Margen estimado</dt><dd>{tactical.estimatedMargin}</dd></div><div><dt>Pulsos</dt><dd>{store.quantumPulses}/5</dd></div></dl></details>}
+      <details
+        className="observer-console__telemetry"
+        data-console-priority="7"
+        onToggle={(event) => setTelemetryExpanded(event.currentTarget.open)}
+        open={telemetryExpanded || store.panel === "HELP"}
+      >
+        <summary><span>Más telemetría</span><small>Probabilidades, coherencia, eventos y ayuda</small></summary>
+        <div className="observer-console__telemetry-content">
+          {store.gameMode === "EXPLORER" && <section className={`resource-margin resource-margin--${tactical.marginStatus.toLowerCase()}`} aria-label={`Margen de recursos ${tactical.marginLabel}`}><div><span>MARGEN {tactical.marginLabel}</span><strong>{tactical.estimatedMargin >= 0 ? `+${tactical.estimatedMargin}` : tactical.estimatedMargin}</strong></div><p>{tactical.marginMessage}</p></section>}
+          <SelectedProbabilities />
+          <CoherenceMeter />
+          <div aria-live="polite" className="mission-feedback observer-console__log"><span className="observer-console__log-title">Últimos eventos</span><AnimatePresence initial={false}>{log.map((message) => <motion.p key={message} initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}>{message}</motion.p>)}</AnimatePresence></div>
+          {store.gameMode === "EXPLORER" && <details className="tactical-details"><summary>Detalles tácticos visibles</summary><dl><div><dt>Rutas potenciales</dt><dd>{tactical.potentialRoutes}</dd></div><div><dt>Distancia aproximada</dt><dd>{tactical.manhattanDistance}</dd></div><div><dt>Observaciones</dt><dd>{store.gameState.observations}</dd></div><div><dt>Margen estimado</dt><dd>{tactical.estimatedMargin}</dd></div><div><dt>Pulsos</dt><dd>{store.quantumPulses}/5</dd></div></dl></details>}
+          <Details />
+          <KeyboardHelp />
+        </div>
+      </details>
     </motion.section>
   );
 }
@@ -832,10 +805,19 @@ export function DailyGame() {
   const decoherencePulsing = messages.some((message) => message.toLowerCase().includes("universo colapsó"));
   const decoherencePressure = deriveDecoherencePressure(gameState.turn, decoherencePulsing);
   const resourceAlert = deriveObservationAlert(gameState.observations);
-  const modeLabel = gameMode === "GUIDED" ? "RUTA GUIADA" : gameMode === "EXPLORER" ? "MODO EXPLORADOR" : gameMode === "QUANTUM_MISSION" ? "MISIÓN CUÁNTICA" : "MODO SIN ELEGIR";
   const shellClass = finished
     ? `final-shell final-shell--${won ? "victory" : "defeat"}`
-    : `game-shell game-shell--juice game-shell--decoherence-${decoherencePressure.level} game-shell--resource-${resourceAlert.level} min-h-screen px-4 py-5 text-slate-100 sm:px-6 lg:px-10`;
+    : `game-shell game-shell--juice game-shell--cockpit game-shell--decoherence-${decoherencePressure.level} game-shell--resource-${resourceAlert.level} min-h-screen px-4 py-5 text-slate-100 sm:px-6 lg:px-10`;
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (phase !== "PLAYING") {
+      delete root.dataset.gameplayCockpit;
+      return undefined;
+    }
+    root.dataset.gameplayCockpit = "active";
+    return () => { delete root.dataset.gameplayCockpit; };
+  }, [phase]);
 
   return <>
     <KeyboardController />
@@ -847,12 +829,9 @@ export function DailyGame() {
         <div className="final-stage"><Finished /></div>
       </> : <>
         <GameplayAtmosphere level={decoherencePressure.level} />
-        <div className="relative z-10 mx-auto max-w-7xl">
-          <header className="game-header"><div><p className="eyebrow">COLAPSO <span aria-hidden="true">·</span> Universo #{universe.universeNumber}</p><h1>Explora una ruta hacia la salida</h1></div><div className="flex flex-wrap items-center justify-end gap-2"><p className="universe-badge">{universe.dateUtc} <span aria-hidden="true">·</span> {modeLabel}</p><SoundToggle /></div></header>
-          <p data-tour="mission-goal" className="mission-goal">OBJETIVO: llega a la salida dorada. No necesitas descubrir todo el tablero.</p>
-          <Hud />
-          <MissionStickyBar />
-          <div className="game-layout"><Board /><aside className="game-sidebar"><Controls /><Details /><KeyboardHelp /></aside></div>
+        <div className="game-cockpit relative z-10 mx-auto max-w-7xl">
+          <CommandBar />
+          <div className="game-layout"><Board /><aside className="game-sidebar"><Controls /></aside></div>
         </div>
         {phase === "PLAYING" && <>{gameMode !== "GUIDED" && <PremiumTour />}{tutorialStep !== null && <p className="sr-only" aria-live="polite">Tutorial paso {tutorialStep} de 8</p>}</>}
       </>}

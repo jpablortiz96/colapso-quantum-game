@@ -4,6 +4,20 @@ COLAPSO is a 7×7 route-finding puzzle. You control the Observer, beginning at t
 
 The player interface is Spanish (`es-419`). This guide uses the exact Spanish control labels where useful.
 
+## Single-screen cockpit
+
+Active gameplay uses a board-first cockpit on supported desktop viewports of at least 1100×680:
+
+- the full 7×7 board is visible when gameplay opens;
+- one compact command bar carries the objective, observations, energy, turn/decoherence state, crystals, score, mode, sound, and help;
+- the Observer Console keeps its resource warning, contextual primary action, target, powers, Explorer Pulse, and Guided Journey step visible;
+- `Más telemetría` keeps probabilities, coherence, event history, tactical detail, keyboard help, and provenance available without competing for initial viewport space;
+- document-level vertical scrolling is disabled only while active gameplay occupies a supported desktop cockpit.
+
+Tablet and mobile layouts preserve a natural page flow. The console does not introduce a second vertical scrollbar, its mobile collapse control remains available, and dialogs retain bounded internal overflow when their content requires it.
+
+This layout is presentation-only. It does not alter observations, energy, movement, powers, decoherence, score, hidden outcomes, replay, or the published universe.
+
 ## Core loop
 
 1. Select a cell on the board.

@@ -2,6 +2,27 @@
 
 All notable changes to COLAPSO are documented here. This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and intends to use semantic versioning for public releases.
 
+## [1.0.1] - 2026-07-22
+
+### Changed
+
+- Reorganized active desktop gameplay into a single-screen cockpit at supported viewports of at least 1100×680.
+- Consolidated mission identity, objective, five core metrics, mode, sound, help, and decoherence pressure into one compact command bar.
+- Kept observation pressure, the contextual primary action, powers, Explorer Pulse, and Guided Journey controls immediately visible in the Observer Console.
+- Moved probabilities, coherence, event history, tactical details, keyboard help, and provenance into a closed `Más telemetría` disclosure.
+- Updated Explorer, decoherence, Guided Journey, and mobile production media; cockpit captures now use 1366×768.
+
+### Fixed
+
+- The complete 7×7 board is visible when active gameplay opens on supported desktop cockpit dimensions.
+- Active desktop gameplay no longer creates document-level vertical scrolling or a competing sidebar scrollbar.
+- Tablet and mobile layouts use one natural document scroll instead of combined page and console scrolling.
+- Removed the duplicated sticky mission resource/action strip without changing game rules or keyboard behavior.
+
+### Preserved contracts
+
+- No changes to the F1 engine, Universe #001, 10/13/13 observation balance, scoring, powers, decoherence cadence, hidden results, evidence, guided transcript, replay, AWS application identity, Amplify branch, or production URL.
+
 ## [1.0.0] - 2026-07-22
 
 ### Added
@@ -30,4 +51,5 @@ All notable changes to COLAPSO are documented here. This project follows [Keep a
 - Deterministic expansion is not represented as new physical entropy.
 - Public resolution material is disclosed; no anti-cheat claim is made.
 
+[1.0.1]: https://github.com/jpablortiz96/colapso-quantum-game/releases/tag/v1.0.1
 [1.0.0]: https://github.com/jpablortiz96/colapso-quantum-game/releases/tag/v1.0.0

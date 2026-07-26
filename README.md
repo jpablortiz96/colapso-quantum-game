@@ -66,6 +66,12 @@ Three modes use the same published universe and core rules:
 
 See [Gameplay](docs/GAMEPLAY.md) for controls, resources, powers, accessibility, and mode details.
 
+### Single-screen desktop cockpit
+
+During active play at supported desktop cockpit sizes (at least 1100×680), the complete 7×7 board, command telemetry, decoherence pressure, resource state, quantum powers, and primary Observer Console action share one browser viewport. Document scrolling is disabled only for that active desktop state; dialogs retain their own safe overflow. Tablet and mobile layouts keep a natural single document flow without a nested console scrollbar, while optional probabilities, coherence, event history, tactical details, help, and provenance remain available under **Más telemetría**.
+
+The cockpit changes presentation only. Observation budgets, powers, score, decoherence cadence, hidden results, replay, keyboard semantics, and the published universe are unchanged.
+
 <table>
   <tr>
     <td width="50%"><img src="docs/media/screenshots/03-explorer-mode.webp" alt="Explorer mode with the board and tactical console" /></td>

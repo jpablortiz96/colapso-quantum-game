@@ -137,19 +137,19 @@ describe("premium first-time player onboarding", () => {
     expect(screen.getByText("Tutorial paso 1 de 8")).toBeInTheDocument();
   });
 
-  it("shows one contextual primary action instead of competing controls", async () => {
+  it("shows one contextual primary action without a duplicate sticky strip", async () => {
     const user = userEvent.setup();
     window.localStorage.setItem(TUTORIAL_PREFERENCE_KEY, "true");
     render(<App />);
 
     await startCanonicalExperience(user);
     expect(screen.queryByRole("button", { name: "Observar casilla" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Acción rápida:/)).not.toBeInTheDocument();
     await user.click(screen.getByTestId("cell-6-1"));
 
     expect(screen.getByRole("button", { name: "Observar casilla" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Acción rápida: Observar" })).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Acción rápida:/)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Mover aquí" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Acción rápida: Mover aquí" })).not.toBeInTheDocument();
     expect(screen.getByText("Pulsa Espacio otra vez para observar.")).toBeInTheDocument();
   });
 

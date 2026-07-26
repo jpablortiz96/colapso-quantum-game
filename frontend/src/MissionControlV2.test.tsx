@@ -80,6 +80,40 @@ describe("COLAPSO V2.1 balance and guided journey", () => {
     expect(screen.getByRole("button", { name: "Comenzar experiencia" })).toBeEnabled();
   });
 
+  it("renders one cockpit with the complete board and essential controls", () => {
+    startMode("EXPLORER");
+    const view = render(<App />);
+
+    expect(document.querySelector(".game-shell--cockpit")).not.toBeNull();
+    expect(document.querySelectorAll(".mission-cell")).toHaveLength(49);
+    expect(screen.getByRole("heading", { name: "Explora una ruta hacia la salida" })).toBeInTheDocument();
+    expect(screen.getByRole("progressbar", { name: /Presión de decoherencia:/ })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Observaciones y alerta activa" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Seleccionar posibilidad" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Poder X" })).toBeInTheDocument();
+    expect(document.querySelector(".mission-sticky-hud")).toBeNull();
+    const telemetry = screen.getByText("Más telemetría").closest("details");
+    expect(telemetry).not.toHaveAttribute("open");
+    expect(document.documentElement).toHaveAttribute("data-gameplay-cockpit", "active");
+
+    act(() => useDailyGameStore.getState().reset());
+    expect(document.documentElement).not.toHaveAttribute("data-gameplay-cockpit");
+    view.unmount();
+    expect(document.documentElement).not.toHaveAttribute("data-gameplay-cockpit");
+  });
+
+  it("keeps observation pressure visible in the essential console", () => {
+    startMode("QUANTUM_MISSION");
+    const current = useDailyGameStore.getState().gameState;
+    useDailyGameStore.setState({ gameState: { ...current, observations: 1 } });
+    render(<App />);
+
+    const resources = screen.getByRole("region", { name: "Observaciones y alerta activa" });
+    expect(resources).toHaveAttribute("data-resource-alert");
+    expect(resources).not.toHaveAttribute("data-resource-alert", "normal");
+    expect(resources).toHaveTextContent("1");
+  });
+
   it("uses a versioned guided solution tied to Universe #001", () => {
     expect(GUIDED_JOURNEY).toMatchObject({
       version: 1,

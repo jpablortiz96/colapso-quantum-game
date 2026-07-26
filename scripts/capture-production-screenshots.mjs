@@ -5,9 +5,23 @@ import { dirname, join, resolve } from "node:path";
 import process from "node:process";
 
 const DEFAULT_URL = "https://production.d333fud52cy2ho.amplifyapp.com";
-const OUTPUT_DIRECTORY = resolve("docs/media/screenshots");
+const OUTPUT_DIRECTORY = resolve(process.env.COLAPSO_CAPTURE_OUTPUT ?? "docs/media/screenshots");
 const DESKTOP = { width: 1440, height: 1100, mobile: false };
+const COCKPIT = { width: 1366, height: 768, mobile: false };
 const MOBILE = { width: 390, height: 844, mobile: true };
+const MEASUREMENT_VIEWPORTS = [
+  { width: 1280, height: 720, mobile: false },
+  COCKPIT,
+  { width: 1440, height: 900, mobile: false },
+  { width: 1920, height: 1080, mobile: false },
+  { width: 1024, height: 768, mobile: false },
+  { width: 768, height: 1024, mobile: false },
+  MOBILE,
+];
+const commandArguments = process.argv.slice(2);
+const measureOnly = commandArguments.includes("--measure");
+const cockpitOnly = commandArguments.includes("--cockpit-only");
+const requestedUrl = commandArguments.find((argument) => !argument.startsWith("--"));
 const PREFERENCES = {
   version: 1,
   mute: true,
@@ -222,6 +236,51 @@ async function capture(client, filename, viewport = DESKTOP) {
   console.log(`captured ${filename} (${viewport.width}x${viewport.height})`);
 }
 
+async function measureGameplay(client, viewport) {
+  await resetExperience(client, requestedUrl ?? DEFAULT_URL, viewport);
+  await startMode(client, "MODO EXPLORADOR");
+  await evaluate(client, "window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); true");
+  await delay(120);
+  return evaluate(client, `(() => {
+    const rectangle = (element) => {
+      if (!(element instanceof HTMLElement)) return null;
+      const rect = element.getBoundingClientRect();
+      return { x: Math.round(rect.x), y: Math.round(rect.y), width: Math.round(rect.width), height: Math.round(rect.height), right: Math.round(rect.right), bottom: Math.round(rect.bottom) };
+    };
+    const scrollingElement = document.scrollingElement ?? document.documentElement;
+    const board = document.querySelector('.mission-board');
+    const consoleElement = document.querySelector('.observer-console');
+    const primaryAction = document.querySelector('.observer-console .action-button--primary');
+    const cells = [...document.querySelectorAll('.mission-cell')];
+    const inViewport = (element) => {
+      const rect = element.getBoundingClientRect();
+      return rect.top >= -1 && rect.left >= -1 && rect.bottom <= innerHeight + 1 && rect.right <= innerWidth + 1;
+    };
+    const boardRect = board?.getBoundingClientRect();
+    const consoleRect = consoleElement?.getBoundingClientRect();
+    const pageScrollHeight = Math.max(scrollingElement.scrollHeight, document.body.scrollHeight);
+    const pageScroll = pageScrollHeight > innerHeight + 1;
+    const consoleScroll = consoleElement instanceof HTMLElement && consoleElement.scrollHeight > consoleElement.clientHeight + 1;
+    return {
+      viewport: { width: innerWidth, height: innerHeight },
+      pageScrollHeight,
+      pageScroll,
+      pageOverflowY: getComputedStyle(scrollingElement).overflowY,
+      board: rectangle(board),
+      console: rectangle(consoleElement),
+      cells: cells.length,
+      visibleCells: cells.filter(inViewport).length,
+      allCellsVisible: cells.length === 49 && cells.every(inViewport),
+      completeBoardVisible: boardRect !== undefined && boardRect.top >= -1 && boardRect.bottom <= innerHeight + 1,
+      primaryAction: rectangle(primaryAction),
+      primaryActionVisible: primaryAction instanceof HTMLElement && inViewport(primaryAction),
+      consoleScroll,
+      internalAndPageScroll: pageScroll && consoleScroll,
+      consoleFullyVisible: consoleRect !== undefined && consoleRect.top >= -1 && consoleRect.bottom <= innerHeight + 1,
+    };
+  })()`);
+}
+
 async function guidedAction(client, action, index) {
   const [kind, row, col] = action;
   await clickSelector(client, `[data-testid="cell-${row}-${col}"]`);
@@ -236,7 +295,7 @@ async function guidedAction(client, action, index) {
 }
 
 async function main() {
-  const url = new URL(process.argv[2] ?? DEFAULT_URL).href;
+  const url = new URL(requestedUrl ?? DEFAULT_URL).href;
   const edge = edgeExecutable();
   const profile = await mkdtemp(join(tmpdir(), "colapso-capture-"));
   const port = 10_000 + Math.floor(Math.random() * 40_000);
@@ -263,32 +322,46 @@ async function main() {
     await client.send("Page.enable");
     await client.send("Runtime.enable");
 
-    await resetExperience(client, url);
-    await capture(client, "01-hero.webp");
+    if (measureOnly) {
+      const measurements = [];
+      for (const viewport of MEASUREMENT_VIEWPORTS) measurements.push(await measureGameplay(client, viewport));
+      console.log(JSON.stringify(measurements, null, 2));
+      return;
+    }
 
-    await clickButton(client, "Procedencia cuántica");
-    await waitFor(client, "document.body.innerText.includes('Cómo nació este universo')", "the quantum provenance modal");
-    await capture(client, "02-quantum-provenance.webp");
+    if (!cockpitOnly) {
+      await resetExperience(client, url);
+      await capture(client, "01-hero.webp");
 
-    await resetExperience(client, url);
+      await clickButton(client, "Procedencia cuántica");
+      await waitFor(client, "document.body.innerText.includes('Cómo nació este universo')", "the quantum provenance modal");
+      await capture(client, "02-quantum-provenance.webp");
+    }
+
+    await resetExperience(client, url, COCKPIT);
     await startMode(client, "MODO EXPLORADOR");
     await clickSelector(client, ".quantum-pulse button");
     await waitFor(client, "document.querySelector('.quantum-pulse--active') !== null", "the explorer quantum pulse recommendation");
-    await capture(client, "03-explorer-mode.webp");
+    await capture(client, "03-explorer-mode.webp", COCKPIT);
 
-    await resetExperience(client, url);
+    await resetExperience(client, url, COCKPIT);
     await startMode(client, "RUTA GUIADA");
     await waitFor(client, `document.body.innerText.includes('PASO 1 DE ${GUIDED_ROUTE.length}')`, "guided journey step 1");
-    await capture(client, "05-guided-journey.webp");
+    await capture(client, "05-guided-journey.webp", COCKPIT);
 
     for (let index = 0; index < GUIDED_ROUTE.length; index += 1) {
       await guidedAction(client, GUIDED_ROUTE[index], index);
       if (index === 2) {
         await waitFor(client, "document.querySelector('[data-decoherence-pressure=\"maximum\"]') !== null", "the maximum decoherence alert");
-        await capture(client, "04-decoherence-alert.webp");
+        await capture(client, "04-decoherence-alert.webp", COCKPIT);
+        if (cockpitOnly) break;
       }
     }
-    await capture(client, "06-final-result.webp");
+
+    if (!cockpitOnly) {
+      await setViewport(client, DESKTOP);
+      await capture(client, "06-final-result.webp");
+    }
 
     await resetExperience(client, url, MOBILE);
     await capture(client, "07-mobile.webp", MOBILE);

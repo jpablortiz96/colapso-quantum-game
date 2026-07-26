@@ -62,6 +62,7 @@ describe("COLAPSO F5 production readiness", () => {
     delete document.documentElement.dataset.pageHidden;
     delete document.documentElement.dataset.reducedMotion;
     delete document.documentElement.dataset.performanceProfile;
+    delete document.documentElement.dataset.gameplayCockpit;
     vi.restoreAllMocks();
   });
 
@@ -218,6 +219,19 @@ describe("COLAPSO F5 production readiness", () => {
     const css = readProject("frontend/src/index.css");
     expect(css).toContain("min-width: 0");
     expect(css).toContain("overflow-y: auto");
+  });
+
+  it("declares desktop cockpit, short-screen, tablet and mobile layout contracts", () => {
+    const css = readProject("frontend/src/index.css");
+    expect(css).toContain('@media (min-width: 1100px) and (min-height: 680px)');
+    expect(css).toContain('html[data-gameplay-cockpit="active"]');
+    expect(css).toContain('grid-template-columns: minmax(0, 1fr) clamp(280px, 23vw, 360px)');
+    expect(css).toContain('@media (min-width: 1100px) and (min-height: 600px) and (max-height: 679px)');
+    expect(css).toContain('@media (max-width: 1099px)');
+    expect(css).toContain('@media (max-width: 639px)');
+    expect(css).toContain('aspect-ratio: 1');
+    expect(css).toContain('max-height: none');
+    expect(css).toContain('overflow: visible');
   });
 
   it("contains no localhost reference in production browser surfaces", () => {

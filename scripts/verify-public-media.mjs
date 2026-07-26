@@ -9,9 +9,9 @@ const screenshotDirectory = join(repositoryRoot, "docs", "media", "screenshots")
 const screenshots = new Map([
   ["01-hero.webp", [1440, 1100]],
   ["02-quantum-provenance.webp", [1440, 1100]],
-  ["03-explorer-mode.webp", [1440, 1100]],
-  ["04-decoherence-alert.webp", [1440, 1100]],
-  ["05-guided-journey.webp", [1440, 1100]],
+  ["03-explorer-mode.webp", [1366, 768]],
+  ["04-decoherence-alert.webp", [1366, 768]],
+  ["05-guided-journey.webp", [1366, 768]],
   ["06-final-result.webp", [1440, 1100]],
   ["07-mobile.webp", [390, 844]],
 ]);

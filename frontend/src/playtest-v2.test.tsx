@@ -689,26 +689,25 @@ describe("COLAPSO V2.4 gameplay clarity", () => {
     }
   });
 
-  it("renders a sticky mission HUD with prioritized desktop and compact mobile state", () => {
+  it("renders a compact command bar and one prioritized Observer Console", () => {
     Object.defineProperty(window, "innerWidth", { configurable: true, value: 1280 });
     startMode("EXPLORER");
     render(<App />);
 
-    const sticky = screen.getByLabelText("Barra de misión persistente");
-    expect(sticky).toHaveAttribute("data-sticky", "true");
-    expect(sticky).toHaveAttribute("data-resource-alert", "stable");
-    expect(sticky).toHaveTextContent("13");
-    expect(sticky).toHaveTextContent("Energía");
-    expect(sticky).toHaveTextContent("Turno");
-    expect(sticky).toHaveTextContent("Cristales");
-    expect(sticky).toHaveTextContent("Puntaje");
-    expect(sticky).toHaveTextContent("Pulsos");
-    expect(screen.getByRole("button", { name: "Acción rápida: Elegir objetivo" })).toBeEnabled();
+    const commandBar = screen.getByLabelText("Comando y estado de la misión");
+    expect(commandBar).toHaveTextContent("13");
+    expect(commandBar).toHaveTextContent("Energía");
+    expect(commandBar).toHaveTextContent("Turno");
+    expect(commandBar).toHaveTextContent("Cristales");
+    expect(commandBar).toHaveTextContent("Puntaje");
+    expect(commandBar).toHaveTextContent("MODO EXPLORADOR");
+    expect(screen.queryByLabelText("Barra de misión persistente")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Seleccionar posibilidad" })).toBeEnabled();
 
     const css = readFileSync("src/index.css", "utf8");
-    expect(css).toMatch(/\.mission-sticky-hud\s*\{[\s\S]*?position: sticky;/);
-    expect(css).toContain("@media (max-width: 767px)");
-    expect(css).toContain(".mission-sticky-hud__stats,");
+    expect(css).toContain('html[data-gameplay-cockpit="active"]');
+    expect(css).toContain("@media (min-width: 1100px) and (min-height: 680px)");
+    expect(css).toContain(".mission-sticky-hud {\n  display: none;");
   });
 
   it("raises visual and audio resource alerts once per observation threshold", () => {
@@ -744,7 +743,7 @@ describe("COLAPSO V2.4 gameplay clarity", () => {
       act(() => useDailyGameStore.setState({
         gameState: { ...useDailyGameStore.getState().gameState, observations },
       }));
-      expect(screen.getByLabelText("Barra de misión persistente")).toHaveAttribute("data-resource-alert", level);
+      expect(document.querySelector(".game-shell")).toHaveAttribute("data-resource-alert", level);
       expect(screen.getByLabelText("Observaciones y alerta activa")).toHaveAttribute("data-resource-alert", level);
       expect(screen.getAllByText(copy).length).toBeGreaterThanOrEqual(1);
     }
@@ -782,16 +781,17 @@ describe("COLAPSO V2.4 gameplay clarity", () => {
     expect(useDailyGameStore.getState().transcript[0]).toMatchObject({ kind: "APPLY_GATE", gate: "H", target: { row: 6, col: 1 } });
   });
 
-  it("orders the observer console by resources, action, target, powers, pulses and log", () => {
+  it("orders essential console controls before the optional telemetry disclosure", () => {
     startMode("EXPLORER");
     render(<App />);
     const consolePanel = screen.getByRole("heading", { name: "Consola del Observador" }).closest("section");
     expect(consolePanel).not.toBeNull();
     const priorities = [...consolePanel!.querySelectorAll<HTMLElement>("[data-console-priority]")]
       .map((element) => Number(element.dataset.consolePriority));
-    expect(priorities).toEqual([1, 3, 4, 5, 6, 7, 8]);
+    expect(priorities).toEqual([1, 3, 4, 5, 6, 7]);
     expect(screen.getByLabelText("Observaciones y alerta activa")).toHaveTextContent("13");
     expect(screen.getByLabelText("Poderes cuánticos")).toBeInTheDocument();
+    expect(screen.getByText("Más telemetría").closest("details")).not.toHaveAttribute("open");
   });
 
   it("keeps mode copy and the difficulty benchmark aligned with 10/13 budgets", () => {
