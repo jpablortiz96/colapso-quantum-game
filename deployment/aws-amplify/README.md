@@ -6,14 +6,14 @@ The current live application is:
 
 <https://production.d333fud52cy2ho.amplifyapp.com>
 
-> Running `deploy-amplify.ps1` can create or update AWS resources and submit a billable deployment job. Read the script, confirm the AWS identity and region, and obtain authorization before using it. Documentation and verification commands do not require a redeploy.
+> Running `deploy-amplify.ps1` updates the named existing Amplify application and can submit a billable deployment job. It never creates an application and fails closed if that app is absent. Read the script, confirm the AWS identity and region, and obtain authorization before using it. Documentation and verification commands do not require a redeploy.
 
 ## Files
 
 | File | Purpose |
 | --- | --- |
 | `package-amplify.ps1` | Stages `frontend/dist`, rejects forbidden content, writes a reproducible-layout ZIP and SHA-256 metadata |
-| `deploy-amplify.ps1` | Performs AWS preflight, safely creates/reuses the manual app and branch, uploads a release, and records redacted local state |
+| `deploy-amplify.ps1` | Performs AWS preflight, requires/reuses the named manual app, creates or reuses its branch, uploads a release, and records redacted local state |
 | `verify-deployment.ps1` | Runs read-only HTTPS, metadata, route, asset, header, cache, budget, and product smoke checks |
 | `spa-rule.json` | SPA fallback rewrite rule |
 | `custom-headers.yml` | Security and caching headers |
@@ -38,17 +38,18 @@ The script defaults are:
 
 Override them with parameters rather than editing tracked files.
 
-## Verify tooling without AWS
+## Finalize and verify without IBM or AWS
 
-From the repository root:
+From the repository root, the complete five-universe release candidate is finalized and checked with one command:
 
 ```powershell
 npm ci
-npm run verify:production
-npm run verify:amplify-package
+npm run release:finalize-offline
 ```
 
-The package verifier and its tests do not call AWS.
+The command strictly verifies preserved evidence, writes canonical finalized campaign artifacts, runs backend/frontend/repository gates, builds the SPA, and exercises local package verification. It performs no IBM access, job submission, AWS call, deployment, commit, or push. To repeat only validation after finalization, use `npm run release:prepare-offline`.
+
+`verify:amplify-package` creates ignored diagnostic ZIP/metadata under `deployment/aws-amplify/releases/`; successful package verification is not a deployment.
 
 ## Build and package only
 
@@ -73,6 +74,8 @@ Packaging requires `frontend/dist/index.html`. It rejects:
 The release ZIP contains the *contents* of `frontend/dist` at its root.
 
 ## Deploy
+
+A new release must start from a clean committed working tree; the deploy script checks this before making any AWS call. The named Amplify application must already exist with the required ownership and safety configuration; the script will not create a replacement. Review the exact commit and rerun `npm run release:prepare-offline` before authorizing deployment. A supplied historical rollback ZIP follows its own checksum path.
 
 Before continuing, verify the active identity without sharing its output publicly:
 
@@ -99,6 +102,8 @@ A supplied `-ReleaseZip` must already satisfy the same package contract.
 
 The deploy script fails closed when:
 
+- the named existing Amplify application is absent or not unique;
+- a new release is attempted from a dirty or uncommitted Git working tree;
 - AWS CLI v2 is absent;
 - the configured profile region does not exactly match the parameter;
 - caller identity cannot be validated;
@@ -108,6 +113,22 @@ The deploy script fails closed when:
 - the upload or Amplify job fails.
 
 Failure output masks account-shaped identifiers, access-key-shaped values, and URLs. This is a defense in depth measure, not permission to paste command output into public reports.
+
+## Release screenshots
+
+The capture workflow defaults to `http://127.0.0.1:4173` and refuses remote targets unless explicitly authorized. After starting a local Vite preview manually, run:
+
+```powershell
+npm run capture:screenshots
+```
+
+It prepares the #001 hero/provenance/gameplay/Guided Journey views plus the five-entry campaign selector, Universe #005, #005 shared-CHSH provenance, and mobile view. After an authorized deployment, remote capture requires both the URL and an explicit opt-in:
+
+```powershell
+npm run capture:screenshots -- "https://production.d333fud52cy2ho.amplifyapp.com" --allow-remote
+```
+
+Remote capture was not run during offline preparation.
 
 ## Read-only production verification
 

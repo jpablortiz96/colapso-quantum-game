@@ -383,12 +383,17 @@ class IbmRuntimeProvider:
             optimization_level=1,
         )
 
-    def _sampler(self, backend: Any) -> Any:
+    def _sampler(self, backend: Any, *, max_execution_time: int | None = None) -> Any:
         if self._sampler_factory is not None:
             return self._sampler_factory(mode=backend)
         from qiskit_ibm_runtime import SamplerV2
 
-        return SamplerV2(mode=backend)
+        options = (
+            {"max_execution_time": max_execution_time}
+            if max_execution_time is not None
+            else None
+        )
+        return SamplerV2(mode=backend, options=options)
 
     def _estimator(self, backend: Any) -> Any:
         if self._estimator_factory is not None:
@@ -412,10 +417,13 @@ class IbmRuntimeProvider:
         entropy_qubits: int,
         shots: int,
         transpiler_seed: int | None = None,
+        max_execution_time: int | None = None,
     ) -> IbmJobSubmission:
         """Submit exactly one grouped SamplerV2 job for independent entropy and Bell counts."""
         if not 256 <= shots <= 512:
             raise DryRunConfigurationError("F2B sampler shots must be from 256 through 512")
+        if max_execution_time is not None and not 1 <= max_execution_time <= 600:
+            raise DryRunConfigurationError("Sampler max_execution_time must be from 1 through 600 seconds")
         entropy = self._transpile_for_backend(
             build_entropy_circuit(entropy_qubits),
             backend=execution.backend,
@@ -426,7 +434,10 @@ class IbmRuntimeProvider:
             backend=execution.backend,
             transpiler_seed=transpiler_seed,
         )
-        job = self._sampler(execution.backend).run([entropy, bell], shots=shots)
+        job = self._sampler(
+            execution.backend,
+            max_execution_time=max_execution_time,
+        ).run([entropy, bell], shots=shots)
         return IbmJobSubmission(
             role="SAMPLER_ENTROPY_BELL",
             job_id=self._job_id(job),
@@ -438,6 +449,7 @@ class IbmRuntimeProvider:
                 "shots": shots,
                 "transpiler_seed": transpiler_seed,
                 "optimization_level": 1,
+                "max_execution_time_seconds": max_execution_time,
                 "circuits": [self._circuit_metadata(entropy), self._circuit_metadata(bell)],
                 "resilience": "provider_default_no_unrecorded_override",
             },

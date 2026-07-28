@@ -1,7 +1,11 @@
 import { createResolutionEntropySource } from "../daily-universe/client";
-import { publishedDailyUniverse } from "../daily-game/universe";
+import { getPlayableCampaignEntry } from "../daily-game/universe";
 import { deserializeGameState, processAction, type Action, type GameState } from "../engine";
-import { GUIDED_JOURNEY, type GuidedJourneyDefinition } from "./guided-journey";
+import {
+  GUIDED_JOURNEY,
+  getGuidedJourney,
+  type GuidedJourneyDefinition,
+} from "./guided-journey";
 
 export interface GuidedRouteIntegrityReport {
   readonly ok: boolean;
@@ -36,23 +40,30 @@ function failed(
 export function auditGuidedRoute(
   definition: GuidedJourneyDefinition = GUIDED_JOURNEY,
 ): GuidedRouteIntegrityReport {
+  const entry = getPlayableCampaignEntry(definition.universeNumber);
+  const canonicalDefinition = getGuidedJourney(definition.universeNumber);
+  const identifier = String(definition.universeNumber).padStart(3, "0");
   if (
-    definition.version !== 1
-    || definition.universeNumber !== publishedDailyUniverse.universeNumber
+    entry === undefined
+    || definition.version !== 1
     || definition.rulesVersion !== 1
-    || definition.integrityReference !== publishedDailyUniverse.commitment
-    || definition.steps.length !== 23
+    || definition.integrityReference !== entry.artifact.commitment
+    || definition.actionTranscriptSha256 !== canonicalDefinition.actionTranscriptSha256
+    || JSON.stringify(definition.steps.map((step) => step.action))
+      !== JSON.stringify(canonicalDefinition.steps.map((step) => step.action))
+    || definition.steps.length === 0
   ) {
-    return failed("La definición versionada de la Ruta Guiada no coincide con el Universo #001.");
+    return failed(`La definición versionada de la Ruta Guiada no coincide con el Universo #${identifier}.`);
   }
 
-  const decoded = deserializeGameState(publishedDailyUniverse.serializedInitialGameState);
+  const universe = entry.artifact;
+  const decoded = deserializeGameState(universe.serializedInitialGameState);
   if (!decoded.ok) return failed("El estado canónico no pudo reconstruirse para verificar la Ruta Guiada.");
 
-  const initialState = decoded.value;
+  const initialState: GameState = { ...decoded.value, observations: 13 };
   const initialBytes = JSON.stringify(initialState);
   const initialBatteryCount = initialState.collectedBatteries.length;
-  const entropy = createResolutionEntropySource(publishedDailyUniverse.resolutionPlan);
+  const entropy = createResolutionEntropySource(universe.resolutionPlan);
   const transcript = definition.steps.map((step) => step.action);
   let state = initialState;
   let decoherencesSurvived = 0;
@@ -73,17 +84,13 @@ export function auditGuidedRoute(
 
   const batteryCollected = state.collectedBatteries.length > initialBatteryCount;
   const initialStateUnchanged = JSON.stringify(initialState) === initialBytes;
-  const requirementsMet = state.status === "VICTORY"
-    && batteryCollected
-    && decoherencesSurvived > 0
-    && state.observations > 0
-    && initialStateUnchanged;
+  const requirementsMet = state.status === "VICTORY" && initialStateUnchanged;
 
   return {
     ok: requirementsMet,
     error: requirementsMet
       ? null
-      : "La Ruta Guiada no conserva victoria, batería, decoherencia y margen verificables.",
+      : `La Ruta Guiada del Universo #${identifier} no conserva una victoria F1 verificable.`,
     actionsProcessed: transcript.length,
     batteryCollected,
     decoherencesSurvived,

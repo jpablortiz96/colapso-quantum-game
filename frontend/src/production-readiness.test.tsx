@@ -50,6 +50,7 @@ describe("COLAPSO F5 production readiness", () => {
   beforeEach(() => {
     window.localStorage.clear();
     useDailyGameStore.getState().resetPreferences();
+    useDailyGameStore.getState().resetCampaignProgress();
     useDailyGameStore.getState().reset();
     Object.defineProperty(window.navigator, "onLine", { configurable: true, value: true });
     Object.defineProperty(window, "matchMedia", { configurable: true, value: undefined });

@@ -4,9 +4,12 @@ import { fileURLToPath } from "node:url";
 import {
   FIRST_UNIVERSE_DATE,
   LOCKED_REAL_RUN_ID,
+  buildAvailableCampaign,
   compileDailyUniverse,
   compileUniverseIndex,
+  finalizeCampaign,
   readLockedRealEvidence,
+  verifyCampaign,
   verifyPublishedUniverse,
   writeCanonicalJsonAtomically,
 } from "./index";
@@ -43,6 +46,12 @@ const parseOptions = (argumentsList: readonly string[]): CommandOptions => {
   return Object.freeze({ dateUtc, runId, output });
 };
 
+const requireNoOptions = (command: string): void => {
+  if (process.argv.length > 3) {
+    throw new Error(`${command} accepts no options.`);
+  }
+};
+
 const defaultUniversePath = (dateUtc: string): string =>
   path.join(repositoryRoot, "frontend", "public", "data", "universes", `${dateUtc}.json`);
 
@@ -69,6 +78,32 @@ const verify = (): void => {
   console.log(`Verified ${verification.universe?.universeId ?? "daily universe"} commitment ${verification.universe?.commitment ?? ""}.`);
 };
 
+const campaignBuild = (): void => {
+  const result = buildAvailableCampaign(repositoryRoot);
+  const commitments = Object.entries(result.commitments)
+    .map(([number, commitment]) => `#${number}=${commitment}`)
+    .join(", ");
+  console.log(`Built evidence-derived campaign artifacts: ${commitments}.`);
+};
+
+const campaignVerify = (): void => {
+  const verification = verifyCampaign(repositoryRoot);
+  if (!verification.ok) {
+    throw new Error(verification.issues.join("; "));
+  }
+  const finalized = verification.bundle?.entries.every((entry) => entry.playable) ?? false;
+  console.log(
+    finalized
+      ? "Verified all five finalized campaign artifacts."
+      : "Verified campaign #1-#4 artifacts and the pending #5 publication gate.",
+  );
+};
+
+const campaignFinalize = (): void => {
+  const result = finalizeCampaign(repositoryRoot);
+  console.log(`Finalized ${result.bundle.entries.length} campaign entries.`);
+};
+
 const main = (): void => {
   const command = process.argv[2];
   if (command === "build") {
@@ -76,13 +111,28 @@ const main = (): void => {
     return;
   }
   if (command === "verify") {
-    if (process.argv.length > 3) {
-      throw new Error("universe:verify accepts no options.");
-    }
+    requireNoOptions("universe:verify");
     verify();
     return;
   }
-  throw new Error("Usage: cli.ts <build|verify> [--date YYYY-MM-DD --run-id RUN_ID --output PATH].");
+  if (command === "campaign-build") {
+    requireNoOptions("campaign-build");
+    campaignBuild();
+    return;
+  }
+  if (command === "campaign-verify") {
+    requireNoOptions("campaign-verify");
+    campaignVerify();
+    return;
+  }
+  if (command === "campaign-finalize") {
+    requireNoOptions("campaign-finalize");
+    campaignFinalize();
+    return;
+  }
+  throw new Error(
+    "Usage: cli.ts <build|verify|campaign-build|campaign-verify|campaign-finalize> [--date YYYY-MM-DD --run-id RUN_ID --output PATH].",
+  );
 };
 
 try {

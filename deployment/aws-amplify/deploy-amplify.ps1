@@ -21,6 +21,16 @@ $StatePath = Join-Path $PSScriptRoot ".deployment-state.json"
 $ReleaseDirectory = Join-Path $PSScriptRoot "releases"
 $PackageScript = Join-Path $PSScriptRoot "package-amplify.ps1"
 
+if ([string]::IsNullOrWhiteSpace($ReleaseZip)) {
+  $gitStatus = (& git -C $RepositoryRoot status --porcelain --untracked-files=normal | Out-String).Trim()
+  if ($LASTEXITCODE -ne 0) {
+    throw "Unable to inspect the Git working tree before deployment."
+  }
+  if (-not [string]::IsNullOrWhiteSpace($gitStatus)) {
+    throw "A new Amplify release requires a clean committed working tree. Commit or revert all source changes before deployment."
+  }
+}
+
 function Get-ShortId([string]$Value) {
   if ($Value.Length -le 8) { return "****" }
   return "$($Value.Substring(0, 4))...$($Value.Substring($Value.Length - 4))"
@@ -163,23 +173,7 @@ if ($appCount -gt 1) { throw "Multiple Amplify apps named '$AppName' exist in $A
 
 $appId = $null
 if ($appCount -eq 0) {
-  $created = (Invoke-AwsJson -Arguments @(
-    "amplify", "create-app",
-    "--name", $AppName,
-    "--description", $Description,
-    "--platform", "WEB",
-    "--no-enable-branch-auto-build",
-    "--no-enable-branch-auto-deletion",
-    "--no-enable-basic-auth",
-    "--custom-rules", $rulesArgument,
-    "--custom-headers", $headersArgument,
-    "--tags", "Project=COLAPSO,Environment=production,ManagedBy=Kiro",
-    "--profile", $AwsProfile,
-    "--region", $AwsRegion,
-    "--output", "json"
-  )) | ConvertFrom-Json
-  $appId = [string]$created.app.appId
-  Write-Host "Created Amplify app '$AppName' ($(Get-ShortId $appId))."
+  throw "Existing Amplify app '$AppName' was not found in $AwsRegion; no application will be created."
 } else {
   $appId = (& aws amplify list-apps --profile $AwsProfile --region $AwsRegion --query "apps[?name=='$AppName'].appId | [0]" --output text | Out-String).Trim()
   if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($appId) -or $appId -eq "None") { throw "Unable to resolve the unique Amplify app." }

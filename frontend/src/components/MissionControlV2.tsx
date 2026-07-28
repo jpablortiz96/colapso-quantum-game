@@ -30,7 +30,7 @@ const modeOptions: readonly {
     mode: "GUIDED",
     title: "RUTA GUIADA",
     badge: "APRENDE JUGANDO",
-    description: "Recorre una solución auditada del Universo #001 mientras descubres observación, recursos, decoherencia y replay.",
+    description: "Recorre una solución auditada del universo seleccionado mientras descubres observación, recursos, decoherencia y replay.",
     details: "13 observaciones · paso a paso · 3 rewinds · sin score competitivo",
   },
 ];
@@ -38,21 +38,21 @@ const modeOptions: readonly {
 export function ModeSelector() {
   const { gameMode, suggestedMode, selectMode } = useDailyGameStore();
   return <section aria-labelledby="mode-heading" className="mode-selector">
-    <div><p className="eyebrow">Elige tu experiencia</p><h2 id="mode-heading">Tres formas de explorar el mismo universo</h2></div>
+    <div><p className="eyebrow">Elige tu experiencia</p><h2 id="mode-heading">Formas de explorar este universo</h2></div>
     <div className="mode-selector__grid">
       {modeOptions.map(({ mode, title, badge, description, details }) => <motion.button
-        key={mode}
-        aria-pressed={gameMode === mode}
-        className={`mode-card ${gameMode === mode ? "mode-card--selected" : ""} ${mode === "EXPLORER" ? "mode-card--recommended" : ""}`}
-        onClick={() => { unlockGameSound(); playGameSound("select"); selectMode(mode); }}
-        type="button"
-        whileTap={{ scale: 0.99 }}
-      >
-        <span className="mode-card__check" aria-hidden="true">{gameMode === mode ? "●" : "○"}</span>
-        <small className="mode-card__badge">{badge}</small>
-        {gameMode === null && suggestedMode === mode && <span className="mode-card__suggestion">Tu última elección</span>}
-        <strong>{title}</strong><span>{description}</span><small>{details}</small>
-      </motion.button>)}
+          key={mode}
+          aria-pressed={gameMode === mode}
+          className={`mode-card ${gameMode === mode ? "mode-card--selected" : ""} ${mode === "EXPLORER" ? "mode-card--recommended" : ""}`}
+          onClick={() => { unlockGameSound(); playGameSound("select"); selectMode(mode); }}
+          type="button"
+          whileTap={{ scale: 0.99 }}
+        >
+          <span className="mode-card__check" aria-hidden="true">{gameMode === mode ? "●" : "○"}</span>
+          <small className="mode-card__badge">{badge}</small>
+          {gameMode === null && suggestedMode === mode && <span className="mode-card__suggestion">Tu última elección</span>}
+          <strong>{title}</strong><span>{description}</span><small>{details}</small>
+        </motion.button>)}
     </div>
   </section>;
 }

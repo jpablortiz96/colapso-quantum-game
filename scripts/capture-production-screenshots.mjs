@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import process from "node:process";
 
-const DEFAULT_URL = "https://production.d333fud52cy2ho.amplifyapp.com";
+const DEFAULT_URL = "http://127.0.0.1:4173";
 const OUTPUT_DIRECTORY = resolve(process.env.COLAPSO_CAPTURE_OUTPUT ?? "docs/media/screenshots");
 const DESKTOP = { width: 1440, height: 1100, mobile: false };
 const COCKPIT = { width: 1366, height: 768, mobile: false };
@@ -21,6 +21,7 @@ const MEASUREMENT_VIEWPORTS = [
 const commandArguments = process.argv.slice(2);
 const measureOnly = commandArguments.includes("--measure");
 const cockpitOnly = commandArguments.includes("--cockpit-only");
+const allowRemote = commandArguments.includes("--allow-remote");
 const requestedUrl = commandArguments.find((argument) => !argument.startsWith("--"));
 const PREFERENCES = {
   version: 1,
@@ -175,9 +176,9 @@ async function navigate(client, url, viewport = DESKTOP) {
   await waitFor(client, "document.querySelector('#root')?.childElementCount > 0", "the React application to render");
 }
 
-async function resetExperience(client, url, viewport = DESKTOP) {
-  await navigate(client, url, viewport);
-  await evaluate(client, `localStorage.setItem("colapso:preferences", ${JSON.stringify(JSON.stringify(PREFERENCES))}); location.reload(); true`);
+async function resetExperience(client, captureUrl, viewport = DESKTOP) {
+  await navigate(client, captureUrl, viewport);
+  await evaluate(client, `localStorage.setItem("colapso:preferences", ${JSON.stringify(JSON.stringify(PREFERENCES))}); localStorage.removeItem("colapso:campaign-progress:v1"); location.reload(); true`);
   await waitFor(client, "document.readyState === 'complete' && document.querySelector('#root')?.childElementCount > 0", "the clean production experience to render", 30_000);
   await waitFor(client, "document.body.innerText.includes('Observa antes de que el universo decida por ti.')", "the COLAPSO hero");
 }
@@ -219,8 +220,19 @@ async function startMode(client, modeLabel) {
   await waitFor(client, "document.body.innerText.includes('Consola del Observador')", `${modeLabel} gameplay`);
 }
 
-async function capture(client, filename, viewport = DESKTOP) {
-  await evaluate(client, "window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); true");
+async function capture(client, filename, viewport = DESKTOP, scrollSelector = null) {
+  if (scrollSelector === null) {
+    await evaluate(client, "window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); true");
+  } else {
+    const encoded = JSON.stringify(scrollSelector);
+    const scrolled = await evaluate(client, `(() => {
+      const element = document.querySelector(${encoded});
+      if (!(element instanceof HTMLElement)) return false;
+      element.scrollIntoView({ behavior: 'instant', block: 'center', inline: 'nearest' });
+      return true;
+    })()`);
+    if (!scrolled) throw new Error(`Could not frame screenshot selector: ${scrollSelector}`);
+  }
   await delay(180);
   const result = await client.send("Page.captureScreenshot", {
     format: "webp",
@@ -236,8 +248,8 @@ async function capture(client, filename, viewport = DESKTOP) {
   console.log(`captured ${filename} (${viewport.width}x${viewport.height})`);
 }
 
-async function measureGameplay(client, viewport) {
-  await resetExperience(client, requestedUrl ?? DEFAULT_URL, viewport);
+async function measureGameplay(client, captureUrl, viewport) {
+  await resetExperience(client, captureUrl, viewport);
   await startMode(client, "MODO EXPLORADOR");
   await evaluate(client, `(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -334,7 +346,12 @@ async function guidedAction(client, action, index) {
 }
 
 async function main() {
-  const url = new URL(requestedUrl ?? DEFAULT_URL).href;
+  const url = new URL(requestedUrl ?? DEFAULT_URL);
+  const loopback = ["localhost", "127.0.0.1", "::1"].includes(url.hostname);
+  if (!loopback && !allowRemote) {
+    throw new Error("Remote screenshot capture is disabled by default. Pass --allow-remote only after the target deployment and network access are explicitly authorized.");
+  }
+  const captureUrl = url.href;
   const edge = edgeExecutable();
   const profile = await mkdtemp(join(tmpdir(), "colapso-capture-"));
   const port = 10_000 + Math.floor(Math.random() * 40_000);
@@ -363,27 +380,27 @@ async function main() {
 
     if (measureOnly) {
       const measurements = [];
-      for (const viewport of MEASUREMENT_VIEWPORTS) measurements.push(await measureGameplay(client, viewport));
+      for (const viewport of MEASUREMENT_VIEWPORTS) measurements.push(await measureGameplay(client, captureUrl, viewport));
       console.log(JSON.stringify(measurements, null, 2));
       return;
     }
 
     if (!cockpitOnly) {
-      await resetExperience(client, url);
+      await resetExperience(client, captureUrl);
       await capture(client, "01-hero.webp");
 
       await clickButton(client, "Procedencia cuántica");
-      await waitFor(client, "document.body.innerText.includes('Cómo nació este universo')", "the quantum provenance modal");
+      await waitFor(client, "document.querySelector('#provenance-title')?.textContent?.includes('Primer Colapso')", "the Universe #001 quantum provenance modal");
       await capture(client, "02-quantum-provenance.webp");
     }
 
-    await resetExperience(client, url, COCKPIT);
+    await resetExperience(client, captureUrl, COCKPIT);
     await startMode(client, "MODO EXPLORADOR");
     await clickSelector(client, ".quantum-pulse button");
     await waitFor(client, "document.querySelector('.quantum-pulse--active') !== null", "the explorer quantum pulse recommendation");
     await capture(client, "03-explorer-mode.webp", COCKPIT);
 
-    await resetExperience(client, url, COCKPIT);
+    await resetExperience(client, captureUrl, COCKPIT);
     await startMode(client, "RUTA GUIADA");
     await waitFor(client, `document.body.innerText.includes('PASO 1 DE ${GUIDED_ROUTE.length}')`, "guided journey step 1");
     await capture(client, "05-guided-journey.webp", COCKPIT);
@@ -400,9 +417,20 @@ async function main() {
     if (!cockpitOnly) {
       await setViewport(client, DESKTOP);
       await capture(client, "06-final-result.webp");
+
+      await resetExperience(client, captureUrl, DESKTOP);
+      await evaluate(client, `localStorage.setItem("colapso:campaign-progress:v1", JSON.stringify({ completedUniverseNumbers: [1, 2, 3, 4] })); location.reload(); true`);
+      await waitFor(client, "document.readyState === 'complete' && document.querySelectorAll('[data-universe-option]').length === 5", "the unlocked five-universe selector", 30_000);
+      await capture(client, "08-campaign-selector.webp", DESKTOP, ".universe-selector");
+      await clickSelector(client, '[data-universe-option="5"]');
+      await waitFor(client, "document.querySelector('.intro-shell[data-universe=\"5\"]') !== null && document.body.innerText.includes('Tormenta Cuántica')", "Universe #005 selection");
+      await capture(client, "09-universe-005.webp");
+      await clickButton(client, "Procedencia cuántica");
+      await waitFor(client, "document.querySelector('[data-provenance-kind=\"DIRECT_SAMPLER_SHARED_CHSH\"] #provenance-title')?.textContent?.includes('Tormenta Cuántica')", "Universe #005 shared-CHSH provenance");
+      await capture(client, "10-universe-005-provenance.webp");
     }
 
-    await resetExperience(client, url, MOBILE);
+    await resetExperience(client, captureUrl, MOBILE);
     await capture(client, "07-mobile.webp", MOBILE);
   } finally {
     try { await client?.send("Browser.close"); } catch {}

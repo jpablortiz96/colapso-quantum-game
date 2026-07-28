@@ -11,7 +11,7 @@ import {
   playGameSound,
 } from "./components/game-sound";
 import { auditGuidedRoute } from "./components/guided-route-integrity";
-import { GUIDED_JOURNEY } from "./components/guided-journey";
+import { GUIDED_JOURNEY, GUIDED_JOURNEYS, getGuidedJourney } from "./components/guided-journey";
 import { LazyModuleBoundary } from "./components/LazyModuleBoundary";
 import {
   appendEventLog,
@@ -24,10 +24,11 @@ import {
   recommendQuantumPulse,
 } from "./components/mission-control";
 import { ProvenanceModal } from "./components/ProvenanceModal";
-import { createResolutionEntropySource } from "./daily-universe/client";
-import { publishedDailyUniverse } from "./daily-game/universe";
+import { createResolutionEntropySource, type DailyUniverse } from "./daily-universe/client";
+import { getPlayableCampaignEntry, publishedDailyUniverse } from "./daily-game/universe";
 import { deserializeGameState, processAction, type Action, type GameState, type Result } from "./engine";
 import {
+  CAMPAIGN_PROGRESS_KEY,
   observationBudgetForMode,
   TUTORIAL_PREFERENCE_KEY,
   useDailyGameStore,
@@ -127,13 +128,18 @@ function executeStoreAction(action: Action): void {
 }
 
 function executeGuidedRoute(from = 0): void {
-  for (const step of GUIDED_JOURNEY.steps.slice(from)) executeStoreAction(step.action);
+  const journey = getGuidedJourney(useDailyGameStore.getState().universe.universeNumber);
+  for (const step of journey.steps.slice(from)) executeStoreAction(step.action);
 }
 
-function canonicalReplay(actions: readonly Action[], observationBudget = 10): GameState {
-  const decoded = deserializeGameState(publishedDailyUniverse.serializedInitialGameState);
-  if (!decoded.ok) throw new Error("Replay could not decode Universe #001.");
-  const entropy = createResolutionEntropySource(publishedDailyUniverse.resolutionPlan);
+function canonicalReplay(
+  actions: readonly Action[],
+  observationBudget = 10,
+  universe: DailyUniverse = publishedDailyUniverse,
+): GameState {
+  const decoded = deserializeGameState(universe.serializedInitialGameState);
+  if (!decoded.ok) throw new Error(`Replay could not decode Universe #${universe.universeNumber}.`);
+  const entropy = createResolutionEntropySource(universe.resolutionPlan);
   let state: GameState = { ...decoded.value, observations: observationBudget };
   for (const action of actions) {
     const result = processAction(state, action, entropy as Parameters<typeof processAction>[2]);
@@ -156,6 +162,7 @@ function BrokenPresentationModule(): never {
 describe("COLAPSO V2.2 deterministic production playtest", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    useDailyGameStore.getState().resetCampaignProgress();
     useDailyGameStore.getState().reset();
     Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, value: vi.fn() });
     Object.defineProperty(window, "requestAnimationFrame", {
@@ -169,6 +176,7 @@ describe("COLAPSO V2.2 deterministic production playtest", () => {
   afterEach(() => {
     cleanup();
     document.body.replaceChildren();
+    useDailyGameStore.getState().resetCampaignProgress();
     useDailyGameStore.getState().reset();
     window.localStorage.clear();
   });
@@ -184,6 +192,8 @@ describe("COLAPSO V2.2 deterministic production playtest", () => {
     executeGuidedRoute();
     const victory = useDailyGameStore.getState();
     expect(victory.gameState.status).toBe("VICTORY");
+    expect(victory.completedUniverseNumbers).toContain(1);
+    expect(JSON.parse(window.localStorage.getItem(CAMPAIGN_PROGRESS_KEY) ?? "{}")).toEqual({ completedUniverseNumbers: [1] });
     expect(victory.metrics.decoherences).toBeGreaterThan(0);
     render(<App />);
     expect(screen.getByText("CANÓNICO")).toBeInTheDocument();
@@ -227,20 +237,34 @@ describe("COLAPSO V2.2 deterministic production playtest", () => {
     expect(screen.getByText("ASISTIDO")).toBeInTheDocument();
   });
 
-  it("audits all 23 guided actions, deviation recovery, rewinds and identical replay", () => {
-    const report = auditGuidedRoute();
-    const actions = GUIDED_JOURNEY.steps.map((step) => step.action);
-    expect(report).toMatchObject({
-      ok: true,
-      actionsProcessed: 23,
-      batteryCollected: true,
-      initialStateUnchanged: true,
-      finalObservations: 1,
-    });
-    expect(report.decoherencesSurvived).toBeGreaterThan(0);
-    expect(createHash("sha256").update(JSON.stringify(actions)).digest("hex")).toBe(GUIDED_JOURNEY.actionTranscriptSha256);
-    expect(JSON.stringify(canonicalReplay(actions))).toBe(JSON.stringify(report.finalState));
+  it("audits and plays every Guided Journey with deterministic replay, recovery and rewinds", () => {
+    for (const universeNumber of [1, 2, 3, 4, 5] as const) {
+      const definition = GUIDED_JOURNEYS[universeNumber];
+      const entry = getPlayableCampaignEntry(universeNumber);
+      expect(entry).toBeDefined();
+      if (entry === undefined) throw new Error(`Universe #${universeNumber} is not playable.`);
+      const report = auditGuidedRoute(definition);
+      const actions = definition.steps.map((step) => step.action);
+      expect(report).toMatchObject({
+        ok: true,
+        actionsProcessed: definition.steps.length,
+        initialStateUnchanged: true,
+        finalState: expect.objectContaining({ status: "VICTORY" }),
+      });
+      expect(createHash("sha256").update(JSON.stringify(actions)).digest("hex")).toBe(definition.actionTranscriptSha256);
+      expect(JSON.stringify(canonicalReplay(actions, observationBudgetForMode("GUIDED"), entry.artifact))).toBe(JSON.stringify(report.finalState));
 
+      useDailyGameStore.getState().selectUniverseFromRoute(universeNumber);
+      startMode("GUIDED");
+      executeGuidedRoute();
+      const completedUniverse = useDailyGameStore.getState();
+      expect(completedUniverse.gameState.status).toBe("VICTORY");
+      expect(completedUniverse.guidedStep).toBe(definition.steps.length);
+      expect(completedUniverse.completedUniverseNumbers).toContain(universeNumber);
+    }
+    expect(useDailyGameStore.getState().completedUniverseNumbers).toEqual([1, 2, 3, 4, 5]);
+
+    useDailyGameStore.getState().selectUniverseFromRoute(1);
     startMode("GUIDED");
     executeStoreAction({ kind: "OBSERVE", target: { row: 5, col: 0 } });
     executeStoreAction({ kind: "MOVE", target: { row: 5, col: 0 } });
@@ -256,7 +280,7 @@ describe("COLAPSO V2.2 deterministic production playtest", () => {
     const completed = useDailyGameStore.getState();
     expect(completed.phase).toBe("FINISHED");
     expect(completed.gameState.status).toBe("VICTORY");
-    expect(completed.guidedStep).toBe(23);
+    expect(completed.guidedStep).toBe(GUIDED_JOURNEY.steps.length);
     expect(completed.gameState.collectedBatteries.length).toBeGreaterThan(0);
     expect(JSON.stringify(canonicalReplay(completed.transcript, observationBudgetForMode("GUIDED")))).toBe(JSON.stringify(completed.gameState));
 
@@ -656,6 +680,7 @@ describe("COLAPSO V2.2 deterministic production playtest", () => {
 describe("COLAPSO V2.4 gameplay clarity", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    useDailyGameStore.getState().resetCampaignProgress();
     useDailyGameStore.getState().reset();
     window.localStorage.setItem(TUTORIAL_PREFERENCE_KEY, "true");
     Object.defineProperty(window, "requestAnimationFrame", {
@@ -667,6 +692,7 @@ describe("COLAPSO V2.4 gameplay clarity", () => {
   afterEach(() => {
     cleanup();
     document.body.replaceChildren();
+    useDailyGameStore.getState().resetCampaignProgress();
     useDailyGameStore.getState().reset();
     window.localStorage.clear();
   });

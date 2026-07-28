@@ -111,6 +111,9 @@ const packageScriptSource = read("deployment/aws-amplify/package-amplify.ps1");
 const destructiveAws = /amplify["'\s,]+(?:delete-app|delete-branch|delete-job)/iu.test(deployScript);
 const idempotent = deployScript.includes("length(apps[?name=='$AppName'])") && deployScript.includes("Reused Amplify app") && deployScript.includes("Reused Amplify branch") && !destructiveAws;
 addCheck("Idempotent non-destructive deploy script", idempotent, "Exact-name reuse is implemented and no AWS delete command exists.");
+const cleanCommitGuard = deployScript.includes("status --porcelain --untracked-files=normal")
+  && deployScript.includes("requires a clean committed working tree");
+addCheck("Clean release commit guard", cleanCommitGuard, "New deployments fail before AWS access when tracked or untracked source changes remain.");
 addCheck("Canonical second-build wiring", deployScript.includes("VITE_PUBLIC_SITE_URL") && deployScript.includes("-PublicSiteUrl $PublicSiteUrl") && packageScriptSource.includes("canonical URL in the package"), "Public URL is process-scoped and package-validated.");
 
 const verifier = read("deployment/aws-amplify/verify-deployment.ps1");

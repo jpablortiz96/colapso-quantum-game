@@ -7,6 +7,7 @@ frontend/coverage/
 # Python
 __pycache__/
 *.py[cod]
+*.egg-info/
 .venv/
 venv/
 .pytest_cache/
@@ -23,6 +24,11 @@ backend/coverage.json
 *.p12
 *.pfx
 .aws/
+.qiskit/
+qiskit-ibm.json
+**/qiskit-ibm.json
+*credential*.json
+**/*credential*.json
 
 # AWS SAM
 .aws-sam/
@@ -37,6 +43,9 @@ Thumbs.db
 *.log
 *.tmp
 *.temp
+operator-logs/
+campaign-acquisition-logs/
+.campaign-acquisition.lock
 
 # AWS Amplify local deployment artifacts
 deployment/aws-amplify/.deployment-state.json

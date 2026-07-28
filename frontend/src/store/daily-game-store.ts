@@ -8,7 +8,10 @@ import {
 } from "../production/preferences";
 import {
   createResolutionEntropySource,
+  type CampaignEntry,
   type DailyUniverse,
+  type PlayableCampaignEntry,
+  type UniverseNumber,
 } from "../daily-universe/client";
 import {
   deserializeGameState,
@@ -16,8 +19,13 @@ import {
   type Action,
   type GameState,
 } from "../engine";
-import { publishedDailyUniverse } from "../daily-game/universe";
-import { GUIDED_JOURNEY, actionsMatch } from "../components/guided-journey";
+import {
+  campaignEntries,
+  getPlayableCampaignEntry,
+  getUniverseDisplayTitle,
+  universeRoutePath,
+} from "../daily-game/universe";
+import { actionsMatch, getGuidedJourney } from "../components/guided-journey";
 import { auditGuidedRoute } from "../components/guided-route-integrity";
 import {
   appendEventLog,
@@ -61,7 +69,65 @@ export function observationBudgetForMode(mode: GameMode): 10 | 13 {
   return MODE_OBSERVATION_BUDGETS[mode];
 }
 
+export const CAMPAIGN_PROGRESS_KEY = "colapso:campaign-progress:v1";
+
+function campaignProgressStorage(): Storage | null {
+  return typeof window === "undefined" ? null : window.localStorage;
+}
+
+function isUniverseNumber(value: unknown): value is UniverseNumber {
+  return Number.isInteger(value) && typeof value === "number" && value >= 1 && value <= 5;
+}
+
+export function isCampaignUniverseUnlocked(
+  universeNumber: UniverseNumber,
+  completedUniverseNumbers: readonly UniverseNumber[],
+): boolean {
+  return universeNumber === 1
+    || completedUniverseNumbers.includes((universeNumber - 1) as UniverseNumber);
+}
+
+function readCampaignProgress(storage: Storage | null = campaignProgressStorage()): readonly UniverseNumber[] {
+  if (storage === null) return [];
+  const serialized = storage.getItem(CAMPAIGN_PROGRESS_KEY);
+  if (serialized === null) return [];
+  try {
+    const candidate: unknown = JSON.parse(serialized);
+    if (
+      typeof candidate !== "object"
+      || candidate === null
+      || Array.isArray(candidate)
+      || Object.keys(candidate).length !== 1
+      || !("completedUniverseNumbers" in candidate)
+      || !Array.isArray(candidate.completedUniverseNumbers)
+      || !candidate.completedUniverseNumbers.every(isUniverseNumber)
+    ) {
+      throw new Error("invalid campaign progress");
+    }
+    return [...new Set(candidate.completedUniverseNumbers)].sort((first, second) => first - second);
+  } catch {
+    storage.removeItem(CAMPAIGN_PROGRESS_KEY);
+    return [];
+  }
+}
+
+function writeCampaignProgress(
+  completedUniverseNumbers: readonly UniverseNumber[],
+  storage: Storage | null = campaignProgressStorage(),
+): void {
+  if (storage === null) return;
+  const completed = [...new Set(completedUniverseNumbers)].sort((first, second) => first - second);
+  storage.setItem(CAMPAIGN_PROGRESS_KEY, JSON.stringify({ completedUniverseNumbers: completed }));
+}
+
+function clearCampaignProgress(storage: Storage | null = campaignProgressStorage()): void {
+  storage?.removeItem(CAMPAIGN_PROGRESS_KEY);
+}
+
 interface DailyGameStore {
+  readonly campaignEntries: readonly CampaignEntry[];
+  readonly campaignEntry: PlayableCampaignEntry;
+  readonly completedUniverseNumbers: readonly UniverseNumber[];
   readonly universe: DailyUniverse;
   readonly gameState: GameState;
   readonly phase: GamePhase;
@@ -95,6 +161,9 @@ interface DailyGameStore {
   readonly guidedError: string | null;
   readonly rewindsRemaining: number;
   readonly rewindsUsed: number;
+  selectUniverse: (universeNumber: UniverseNumber) => boolean;
+  selectUniverseFromRoute: (universeNumber: UniverseNumber) => boolean;
+  selectNextUniverse: () => boolean;
   start: () => void;
   startTutorial: () => void;
   nextTutorial: () => void;
@@ -113,6 +182,7 @@ interface DailyGameStore {
   closePanel: () => void;
   toggleSound: () => void;
   resetPreferences: () => void;
+  resetCampaignProgress: () => void;
   getActionAvailability: () => ActionAvailability;
   observeSelected: () => void;
   moveSelected: () => void;
@@ -292,10 +362,11 @@ function uniqueCoordinates(current: readonly Coordinate[], next: readonly Coordi
   return [...map.values()];
 }
 
-function guidedProgress(transcript: readonly Action[]): number {
+function guidedProgress(transcript: readonly Action[], universeNumber: UniverseNumber): number {
+  const journey = getGuidedJourney(universeNumber);
   let step = 0;
   for (const action of transcript) {
-    const expected = GUIDED_JOURNEY.steps[step]?.action;
+    const expected = journey.steps[step]?.action;
     if (expected !== undefined && actionsMatch(action, expected)) step += 1;
   }
   return step;
@@ -342,9 +413,13 @@ interface RebuiltPresentation {
   readonly flow: number;
 }
 
-function rebuildFromTranscript(actions: readonly Action[], mode: GameMode = "GUIDED"): RebuiltPresentation | null {
-  const entropy = createResolutionEntropySource(publishedDailyUniverse.resolutionPlan);
-  let gameState = stateForMode(deserializePublishedState(publishedDailyUniverse), mode);
+function rebuildFromTranscript(
+  actions: readonly Action[],
+  universe: DailyUniverse,
+  mode: GameMode = "GUIDED",
+): RebuiltPresentation | null {
+  const entropy = createResolutionEntropySource(universe.resolutionPlan);
+  let gameState = stateForMode(deserializePublishedState(universe), mode);
   let metrics: MissionMetrics = { ...EMPTY_MISSION_METRICS };
   let routeEvents: readonly RouteEvent[] = [{ kind: "START", coordinate: { ...gameState.player }, turn: gameState.turn }];
   let routePositions: readonly Coordinate[] = [{ ...gameState.player }];
@@ -388,11 +463,19 @@ function rebuildFromTranscript(actions: readonly Action[], mode: GameMode = "GUI
   return { gameState, entropy, metrics, routeEvents, routePositions, observedCoordinates, decoherenceCoordinates, flow };
 }
 
-let entropySource = createResolutionEntropySource(publishedDailyUniverse.resolutionPlan);
+const initialCampaignEntry = getPlayableCampaignEntry(1);
+if (initialCampaignEntry === undefined) {
+  throw new Error("Published campaign universe #1 must remain playable.");
+}
+
+let entropySource = createResolutionEntropySource(initialCampaignEntry.artifact.resolutionPlan);
 let pulseTimer: number | undefined;
 const initialPreferences = readProductionPreferences();
+const initialCompletedUniverseNumbers = readCampaignProgress();
 
 export const useDailyGameStore = create<DailyGameStore>((set, get) => {
+  const selectedUniverse = (): DailyUniverse => get().universe;
+
   const clearPulseTimer = () => {
     if (pulseTimer !== undefined && typeof window !== "undefined") window.clearTimeout(pulseTimer);
     pulseTimer = undefined;
@@ -404,7 +487,7 @@ export const useDailyGameStore = create<DailyGameStore>((set, get) => {
 
   const activateTutorialStep = (step: TutorialStep) => {
     const state = get();
-    const observationTarget = state.tutorialObservationTarget ?? findTutorialObservationTarget(publishedDailyUniverse, state.gameState);
+    const observationTarget = state.tutorialObservationTarget ?? findTutorialObservationTarget(selectedUniverse(), state.gameState);
     const selectedCell = step === 3 || step === 4 ? observationTarget ?? state.selectedCell : step === 5 ? state.tutorialMoveTarget ?? state.selectedCell : state.selectedCell;
     set({ tutorialStep: step, tutorialObservationTarget: observationTarget, selectedCell, feedback: tutorialFeedback(step) });
   };
@@ -413,7 +496,7 @@ export const useDailyGameStore = create<DailyGameStore>((set, get) => {
     const current = get();
     if (current.gameMode === null) { set({ panel: "MODES", feedback: "Elige una experiencia antes de comenzar." }); return; }
     if (current.gameMode === "GUIDED") {
-      const integrity = auditGuidedRoute();
+      const integrity = auditGuidedRoute(getGuidedJourney(current.universe.universeNumber));
       if (!integrity.ok) {
         const error = integrity.error ?? "La Ruta Guiada no está disponible en este momento.";
         set({ phase: "INTRO", panel: null, guidanceActive: false, guidedError: error, feedback: error });
@@ -422,7 +505,7 @@ export const useDailyGameStore = create<DailyGameStore>((set, get) => {
     }
     const state = current.gameState;
     const showTutorial = current.gameMode !== "GUIDED" && (force || !isTutorialCompleted());
-    const observationTarget = showTutorial ? findTutorialObservationTarget(publishedDailyUniverse, state) : null;
+    const observationTarget = showTutorial ? findTutorialObservationTarget(selectedUniverse(), state) : null;
     const fresh = current.phase === "INTRO" ? initialPresentation(state, current.gameMode) : {};
     set({
       ...fresh,
@@ -448,7 +531,7 @@ export const useDailyGameStore = create<DailyGameStore>((set, get) => {
     const before = current.gameState;
     const result = processAction(before, action, entropySource as Parameters<typeof processAction>[2]);
     if (!result.ok) {
-      const expectedAction = GUIDED_JOURNEY.steps[current.guidedStep]?.action;
+      const expectedAction = getGuidedJourney(current.universe.universeNumber).steps[current.guidedStep]?.action;
       if (current.gameMode === "GUIDED" && expectedAction !== undefined && actionsMatch(action, expectedAction) && !current.guidedDeviation) {
         const error = "La Ruta Guiada detectó un paso inválido y se detuvo sin alterar el universo.";
         set({ guidedError: error, guidanceActive: false, feedback: error, messages: [error], eventLog: appendEventLog(current.eventLog, [error]) });
@@ -463,12 +546,12 @@ export const useDailyGameStore = create<DailyGameStore>((set, get) => {
     const newCollapses = result.state.board.filter((cell, index) => cell.kind === "COLLAPSED" && before.board[index]?.kind !== "COLLAPSED").map((cell) => cell.coordinate);
     const currentTutorialStep = current.tutorialStep;
     const outcome = action.kind === "OBSERVE" ? observedOutcome(result.state, action.target) : null;
-    const moveTarget = currentTutorialStep === 4 && action.kind === "OBSERVE" ? findLegalMoveTarget(publishedDailyUniverse, result.state) : current.tutorialMoveTarget;
+    const moveTarget = currentTutorialStep === 4 && action.kind === "OBSERVE" ? findLegalMoveTarget(selectedUniverse(), result.state) : current.tutorialMoveTarget;
     const nextTutorialStep: TutorialStep | null = currentTutorialStep === 4 && action.kind === "OBSERVE" ? moveTarget === null ? 6 : 5 : currentTutorialStep === 5 && action.kind === "MOVE" ? 6 : currentTutorialStep;
     const terminal = isTerminal(result.state);
     const nextFlowValue = Math.min(3, current.flow + 1);
     const burst = nextFlowValue === 3;
-    const expectedAction = GUIDED_JOURNEY.steps[current.guidedStep]?.action;
+    const expectedAction = getGuidedJourney(current.universe.universeNumber).steps[current.guidedStep]?.action;
     const followsGuide = current.gameMode !== "GUIDED" || (expectedAction !== undefined && actionsMatch(action, expectedAction));
     const guidedMessage = current.gameMode === "GUIDED" && !followsGuide ? "Te apartaste de la ruta sugerida. Puedes continuar libremente o volver a la orientación." : null;
     const burstMessage = "COHERENCE BURST — el patrón del universo se estabilizó.";
@@ -486,6 +569,10 @@ export const useDailyGameStore = create<DailyGameStore>((set, get) => {
       coherenceBursts: current.metrics.coherenceBursts + (burst ? 1 : 0),
       maxFlow: Math.max(current.metrics.maxFlow, nextFlowValue),
     };
+    const completedUniverseNumbers = result.state.status === "VICTORY"
+      ? [...new Set([...current.completedUniverseNumbers, current.universe.universeNumber])]
+      : current.completedUniverseNumbers;
+    if (result.state.status === "VICTORY") writeCampaignProgress(completedUniverseNumbers);
 
     set({
       gameState: result.state,
@@ -511,21 +598,64 @@ export const useDailyGameStore = create<DailyGameStore>((set, get) => {
       guidanceActive: current.gameMode === "GUIDED" ? current.guidanceActive && followsGuide : false,
       guidedDeviation: current.gameMode === "GUIDED" ? current.guidedDeviation || !followsGuide : false,
       guidedError: null,
+      completedUniverseNumbers,
     });
   };
 
   const retryMission = () => {
-    const mode = get().gameMode;
+    const current = get();
+    const mode = current.gameMode;
     if (mode === null) { set({ phase: "INTRO", panel: "MODES" }); return; }
     clearPulseTimer();
-    entropySource = createResolutionEntropySource(publishedDailyUniverse.resolutionPlan);
-    const gameState = stateForMode(deserializePublishedState(publishedDailyUniverse), mode);
+    entropySource = createResolutionEntropySource(current.universe.resolutionPlan);
+    const gameState = stateForMode(deserializePublishedState(current.universe), mode);
     set({ gameState, phase: "PLAYING", ...initialPresentation(gameState, mode) });
   };
 
-  const initialGameState = deserializePublishedState(publishedDailyUniverse);
+  const selectCampaignUniverse = (
+    universeNumber: UniverseNumber,
+    bypassUnlock: boolean,
+    historyMode: "none" | "push" | "replace",
+  ): boolean => {
+    const entry = getPlayableCampaignEntry(universeNumber);
+    if (entry === undefined) {
+      const feedback = "Ese universo no forma parte de la campaña publicada.";
+      set({ feedback, messages: [feedback] });
+      return false;
+    }
+    if (!bypassUnlock && !isCampaignUniverseUnlocked(universeNumber, get().completedUniverseNumbers)) {
+      const previous = String(universeNumber - 1).padStart(3, "0");
+      const feedback = `Completa el Universo #${previous} para desbloquear esta misión.`;
+      set({ feedback, messages: [feedback] });
+      return false;
+    }
+    clearPulseTimer();
+    entropySource = createResolutionEntropySource(entry.artifact.resolutionPlan);
+    const gameState = deserializePublishedState(entry.artifact);
+    set({
+      campaignEntry: entry,
+      universe: entry.artifact,
+      gameState,
+      phase: "INTRO",
+      gameMode: null,
+      pulseNonce: 0,
+      coherenceBurstNonce: 0,
+      ...initialPresentation(gameState, null),
+      feedback: `Universo #${String(universeNumber).padStart(3, "0")} · ${getUniverseDisplayTitle(universeNumber)} listo.`,
+    });
+    if (historyMode !== "none" && typeof window !== "undefined") {
+      const method = historyMode === "replace" ? "replaceState" : "pushState";
+      window.history[method](null, "", universeRoutePath(universeNumber));
+    }
+    return true;
+  };
+
+  const initialGameState = deserializePublishedState(initialCampaignEntry.artifact);
   return {
-    universe: publishedDailyUniverse,
+    campaignEntries,
+    campaignEntry: initialCampaignEntry,
+    completedUniverseNumbers: initialCompletedUniverseNumbers,
+    universe: initialCampaignEntry.artifact,
     gameState: initialGameState,
     phase: "INTRO",
     selectedCell: null,
@@ -558,6 +688,15 @@ export const useDailyGameStore = create<DailyGameStore>((set, get) => {
     guidedError: null,
     rewindsRemaining: 3,
     rewindsUsed: 0,
+    selectUniverse: (universeNumber) => selectCampaignUniverse(universeNumber, false, "push"),
+    selectUniverseFromRoute: (universeNumber) => selectCampaignUniverse(universeNumber, true, "none"),
+    selectNextUniverse: () => {
+      const currentNumber = get().universe.universeNumber;
+      const next = campaignEntries.find(
+        (entry) => entry.universeNumber > currentNumber && entry.playable,
+      );
+      return next === undefined ? false : selectCampaignUniverse(next.universeNumber, false, "push");
+    },
     start: () => beginTutorial(false),
     startTutorial: () => beginTutorial(true),
     nextTutorial: () => {
@@ -578,15 +717,17 @@ export const useDailyGameStore = create<DailyGameStore>((set, get) => {
     repeatTutorial: () => beginTutorial(true),
     reset: () => {
       clearPulseTimer();
-      entropySource = createResolutionEntropySource(publishedDailyUniverse.resolutionPlan);
-      const gameState = deserializePublishedState(publishedDailyUniverse);
+      const universe = selectedUniverse();
+      entropySource = createResolutionEntropySource(universe.resolutionPlan);
+      const gameState = deserializePublishedState(universe);
       set({ gameState, phase: "INTRO", gameMode: null, pulseNonce: 0, coherenceBurstNonce: 0, ...initialPresentation(gameState, null) });
     },
     retry: retryMission,
     changeMode: () => {
       clearPulseTimer();
-      entropySource = createResolutionEntropySource(publishedDailyUniverse.resolutionPlan);
-      const gameState = deserializePublishedState(publishedDailyUniverse);
+      const universe = selectedUniverse();
+      entropySource = createResolutionEntropySource(universe.resolutionPlan);
+      const gameState = deserializePublishedState(universe);
       set({ gameState, phase: "INTRO", gameMode: null, ...initialPresentation(gameState, null), panel: "MODES" });
     },
     selectMode: (mode) => {
@@ -620,18 +761,24 @@ export const useDailyGameStore = create<DailyGameStore>((set, get) => {
       resetProductionPreferences();
       set({ soundEnabled: true, suggestedMode: null });
     },
-    getActionAvailability: () => actionAvailability(publishedDailyUniverse, get().gameState, get().selectedCell),
+    resetCampaignProgress: () => {
+      clearCampaignProgress();
+      set({ completedUniverseNumbers: [] });
+      selectCampaignUniverse(1, true, "replace");
+      set({ feedback: "Progreso de campaña restablecido. El Universo #001 está listo." });
+    },
+    getActionAvailability: () => actionAvailability(selectedUniverse(), get().gameState, get().selectedCell),
     observeSelected: () => applyAction(selectedAction(get().selectedCell, (target) => ({ kind: "OBSERVE", target }))),
     moveSelected: () => applyAction(selectedAction(get().selectedCell, (target) => ({ kind: "MOVE", target }))),
     executePrimary: () => {
-      const availability = actionAvailability(publishedDailyUniverse, get().gameState, get().selectedCell);
+      const availability = actionAvailability(selectedUniverse(), get().gameState, get().selectedCell);
       if (availability.move) applyAction(selectedAction(get().selectedCell, (target) => ({ kind: "MOVE", target })));
       else if (availability.observe) applyAction(selectedAction(get().selectedCell, (target) => ({ kind: "OBSERVE", target })));
       else registerInvalid("Sin acción disponible para esta casilla.");
     },
     applyGateToSelected: (gate) => {
       const current = get();
-      const availability = actionAvailability(publishedDailyUniverse, current.gameState, current.selectedCell);
+      const availability = actionAvailability(selectedUniverse(), current.gameState, current.selectedCell);
       const available = gate === "X" ? availability.powerX : availability.powerH;
       const reason = gate === "X" ? availability.powerXReason : availability.powerHReason;
       if (!available) { registerInvalid(reason ?? "Este poder no puede aplicarse aquí."); return; }
@@ -674,7 +821,7 @@ export const useDailyGameStore = create<DailyGameStore>((set, get) => {
     executeCursorPrimary: () => {
       const cursor = get().keyboardCursor;
       set({ selectedCell: { ...cursor } });
-      const availability = actionAvailability(publishedDailyUniverse, get().gameState, cursor);
+      const availability = actionAvailability(selectedUniverse(), get().gameState, cursor);
       if (availability.move) applyAction({ kind: "MOVE", target: cursor });
       else if (availability.observe) applyAction({ kind: "OBSERVE", target: cursor });
       else registerInvalid("Sin acción disponible para esta casilla.");
@@ -683,15 +830,16 @@ export const useDailyGameStore = create<DailyGameStore>((set, get) => {
     returnToGuidance: () => {
       const current = get();
       if (current.gameMode !== "GUIDED") return;
-      const transcript = GUIDED_JOURNEY.steps.slice(0, current.guidedStep).map((step) => step.action);
-      const rebuilt = rebuildFromTranscript(transcript);
+      const journey = getGuidedJourney(current.universe.universeNumber);
+      const transcript = journey.steps.slice(0, current.guidedStep).map((step) => step.action);
+      const rebuilt = rebuildFromTranscript(transcript, current.universe);
       if (rebuilt === null) {
         const error = "No fue posible restaurar la Ruta Guiada desde su estado canónico.";
         set({ guidanceActive: false, guidedError: error, feedback: error, messages: [error], eventLog: appendEventLog(current.eventLog, [error]) });
         return;
       }
       entropySource = rebuilt.entropy;
-      const target = GUIDED_JOURNEY.steps[current.guidedStep]?.action.target;
+      const target = getGuidedJourney(current.universe.universeNumber).steps[current.guidedStep]?.action.target;
       const message = target === undefined
         ? "La orientación ya está completa."
         : "Ruta canónica restaurada en el siguiente paso pendiente.";
@@ -713,7 +861,7 @@ export const useDailyGameStore = create<DailyGameStore>((set, get) => {
       const current = get();
       if (current.gameMode !== "GUIDED" || current.rewindsRemaining <= 0 || current.transcript.length === 0) return;
       const transcript = current.transcript.slice(0, -1);
-      const rebuilt = rebuildFromTranscript(transcript);
+      const rebuilt = rebuildFromTranscript(transcript, current.universe);
       if (rebuilt === null) { registerInvalid("No fue posible reconstruir el transcript verificable."); return; }
       entropySource = rebuilt.entropy;
       const message = "El universo fue reconstruido desde su transcript verificable.";
@@ -721,7 +869,7 @@ export const useDailyGameStore = create<DailyGameStore>((set, get) => {
         ...rebuilt,
         phase: isTerminal(rebuilt.gameState) ? "FINISHED" : "PLAYING",
         transcript,
-        guidedStep: guidedProgress(transcript),
+        guidedStep: guidedProgress(transcript, current.universe.universeNumber),
         guidanceActive: true,
         guidedDeviation: false,
         guidedError: null,

@@ -1,6 +1,6 @@
 # Evidence Register
 
-This register begins with the verified F1 baseline. It contains only observations actually produced by local commands; no screenshots, quantum jobs, CHSH results, AWS resources, gameplay captures, public deployments, or user-traction measurements are claimed.
+This register began with the verified F1 baseline and now includes local tests, simulated evidence, preserved IBM Runtime V2 evidence, deterministic universe compilation, and the finalized five-universe campaign. Entries report only artifacts and commands actually observed; absence of a registered screenshot, new cloud deployment, or traction measurement remains explicit.
 
 ## Registration schema
 
@@ -38,7 +38,7 @@ Every future evidence record must contain:
 - [ ] Failed, partial, noisy, discarded, substituted, or fallback results relevant to the claim are retained and disclosed.
 - [ ] Visual evidence has sufficient context and no secrets or personal data.
 
-Unchecked boxes define the checklist for future entries; they do not imply missing work in the empty Step 0 register.
+Unchecked boxes define the checklist applied to future entries; they do not negate the completed records below.
 
 ## Kiro
 
@@ -50,23 +50,23 @@ The F1 baseline is registered as `EV-20260720-001`; checkpoint and final engine 
 
 ## Quantum jobs
 
-No quantum-job evidence is registered; no job was submitted in Step 0.
+Preserved real IBM Runtime evidence is registered in EV-20260722-013 and the finalized campaign entry below. Offline finalization did not submit or retrieve a job.
 
 ## CHSH
 
-No CHSH evidence is registered.
+The direct Universe #001 EstimatorV2/CHSH record is registered in EV-20260722-013. Universes #002–#005 reference it as shared scientific provenance and do not claim direct EstimatorV2 jobs.
 
 ## AWS
 
-No AWS evidence is registered; no resources were created or deployed in Step 0.
+AWS deployment is an operator-only action outside evidence acquisition and offline finalization. The tracked deployment workflow requires the named existing Amplify application, a clean committed tree, and post-deployment verification; it never creates another application.
 
 ## Gameplay
 
-No gameplay evidence is registered; gameplay is not implemented in Step 0.
+The deterministic frontend baseline is registered in EV-20260722-015; the finalized campaign entry below extends it to five selectable universes.
 
 ## Public deployment
 
-No public-deployment evidence is registered.
+Five-universe deployment evidence is established only by the clean-commit Amplify job and post-deployment read-only smoke verification. Offline evidence verification and a reachable historical URL are not substitutes for that production check.
 
 ## User traction
 
@@ -328,3 +328,23 @@ No user-traction evidence is registered, and no user count or engagement metric 
 - **Result:** Local-only user interface; no anti-cheat, physical-entanglement, quantum-advantage, leaderboard, authentication, backend, or network claim is made.
 - **Verified by:** Focused RTL/Vitest and the offline `verify:f4a` gate; final quality-gate outputs remain reproducible from the delivery commit.
 - **Redactions:** None.
+
+## Five-universe campaign
+
+### EV-20260728-016 — Offline finalization of five preserved hardware universes
+
+- **Category:** Quantum jobs, Gameplay, and Tests
+- **Claim:** The repository's finalized campaign contains five playable deterministic universes derived from five separately submitted and preserved IBM Quantum SamplerV2 executions; Universe #001 supplies the direct EstimatorV2/CHSH record shared explicitly by #002–#005.
+- **Observation:** Strict backend finalization verified five distinct Sampler Job IDs, four distinct new runtime-raw results, five preserved results, and a byte-identical Universe #001 baseline before writing `evidence/campaign-index.json`. Strict frontend finalization wrote five dated artifacts, `campaign.json`, `index.json`, and the bundled compatibility copy. All entries are `published`, `verified`, and playable. Focused campaign tests passed 23/23; the repaired App/playtest regression run passed 42/42.
+- **Source kind:** Preserved raw/derived provider exports plus derived canonical campaign and universe artifacts.
+- **Real/simulated status:** `REAL` source provenance; finalization itself was offline and created no measurement.
+- **Captured at:** `2026-07-28T00:22:32.963685Z` is the latest preserved hardware completion and campaign-index completion value. The later offline command's wall-clock time was not stored as a separate evidence artifact.
+- **Source revision:** Working tree based on `e099ee226046ebee44d532c2da29511f80a5f509`; final release changes remained uncommitted during verification.
+- **Environment:** Windows; CPython 3.12 through uv; Node.js/npm and pinned frontend dependencies from the repository lockfiles. No IBM or AWS credential was used by finalization.
+- **Procedure:** `uv run --frozen --directory backend python scripts/acquire_campaign_quantum_evidence.py --finalize-offline`; `npx --no-install jiti frontend/src/daily-universe/cli.ts campaign-finalize`; strict backend/frontend verification commands; focused Vitest campaign and App/playtest suites.
+- **Artifact path:** `evidence/campaign-index.json`, `evidence/campaign-index.sha256`, `evidence/universe-002/` through `evidence/universe-005/`, `frontend/public/data/universes/2026-07-22.json` through `2026-07-26.json`, `frontend/public/data/universes/campaign.json`, and `frontend/src/daily-game/published-campaign.json`.
+- **SHA-256:** Campaign index `bc3cb080daed5c29eaed6caf14cc7fb9ee7a6b2ed6091038e1c67c141755577d`. Published commitments: #001 `bcff83aade29774587a84df10a9e168f5828e705728981d4eb8caf4075875579`; #002 `bd5f8c97b66339df9f453c4a527bf6e68654c0472be133170aaf0c30b304cb27`; #003 `be311b3567602eaa3bfd4da7881d5830b9ffc07bad97452e52b3c340d408eebe`; #004 `f8bcf4ff0154c8b4091f01236509046004223ae4ca46e43a7f0836276a5780ae`; #005 `c4cfc1afeb0da6b7223fa1a994bf240883a465d18c9a3acf48234696badf2a56`.
+- **Raw parents:** Universe #001 uses `evidence/runs/real/real-20260721t205417z/`; #002–#005 use their numbered evidence directories and each links its direct SamplerV2 export to accepted entropy and a manifest. Their CHSH field links to #001 Estimator Job `d9ftp0kinv1c73arre9g`, not a direct estimator execution for those entries.
+- **Result:** PASS for offline finalization and focused integration verification. Separate Job IDs are not presented as proof of statistical independence. No IBM access, job submission, AWS action, deployment, commit, push, or remote screenshot capture occurred.
+- **Verified by:** Fail-closed backend and frontend campaign verifiers, canonical artifact checks, #001 byte pin/sync checks, and focused automated tests.
+- **Redactions:** None; credentials and private provider values are rejected by the evidence workflow.

@@ -9,14 +9,17 @@ import {
 import { calculateCommitment } from "./commitment";
 import { deriveAttemptKey, expandCounterMode, sha256Hex } from "./entropy-expander";
 import type {
+  ChshSummary,
   DailyUniverse,
   DailyUniverseIndex,
   EntropyDerivation,
   EntropyExpansionMetadata,
   ResolutionPlan,
+  VerifiedCampaignEvidence,
   VerifiedRealEvidence,
 } from "./types";
 import {
+  CAMPAIGN_UNIVERSE_IDENTITIES,
   DAILY_UNIVERSE_SCHEMA_VERSION,
   FIRST_UNIVERSE_DATE,
   FIRST_UNIVERSE_NUMBER,
@@ -222,3 +225,115 @@ export const compileUniverseIndex = (
       }),
     ]),
   });
+
+const CAMPAIGN_PROVENANCE_NOTICE =
+  "Este universo fue derivado de evidencia SamplerV2 directa preservada para este universo. Su resumen CHSH referencia explícitamente la evidencia EstimatorV2/CHSH compartida y fijada del universo #1; no afirma evidencia EstimatorV2 directa para este universo.";
+
+/** Compiles a campaign universe (#2-#5) from its own accepted entropy bytes and direct Sampler evidence. */
+export const compileCampaignUniverse = (
+  evidence: VerifiedCampaignEvidence,
+  sharedChsh: ChshSummary,
+): DailyUniverse => {
+  const identity = CAMPAIGN_UNIVERSE_IDENTITIES[evidence.universeNumber];
+  if (evidence.title !== identity.title) {
+    throw new Error(`Campaign evidence title does not match universe #${evidence.universeNumber}.`);
+  }
+  const selected = selectFirstPlayableCandidate(
+    evidence.sourceEntropyHash,
+    buildCandidate,
+  );
+  const candidate = selected.value;
+  const resolutionPlan: ResolutionPlan = Object.freeze({
+    schemaVersion: 1,
+    algorithm: "SHA-256 counter mode",
+    version: "colapso-daily-universe-resolution-v1",
+    keyMaterialHex: candidate.resolutionKeyHex,
+    keyMaterialHash: sha256Hex(Buffer.from(candidate.resolutionKeyHex, "hex")),
+    derivationDomain: "resolution-plan/v1",
+    streamDomain: "turn-resolution/v1",
+    counterStart: 0,
+    wordByteOrder: "big-endian",
+    bytesProduced: 32,
+    bytesConsumed: 32,
+    clientDisclosure: CLIENT_DISCLOSURE,
+  });
+  const entropyExpansion: EntropyExpansionMetadata = Object.freeze({
+    algorithm: "SHA-256 counter mode",
+    version: "colapso-daily-universe-expansion-v1",
+    inputMaterial: "accepted-entropy.json:entropy_bytes_hex",
+    sourceEntropyHash: evidence.sourceEntropyHash,
+    attemptDerivation: Object.freeze({
+      domain: "universe-attempt",
+      version: "v1",
+      attemptIndex: selected.attemptIndex,
+      initialHash: candidate.attemptHash,
+    }),
+    derivations: candidate.entropyDerivations,
+    note:
+      "La expansión extiende de forma determinista el material aceptado; no crea ni certifica entropía física nueva.",
+  });
+  const withoutCommitment: Omit<DailyUniverse, "commitment"> = {
+    schemaVersion: DAILY_UNIVERSE_SCHEMA_VERSION,
+    universeId: identity.universeId,
+    universeNumber: evidence.universeNumber,
+    dateUtc: identity.dateUtc,
+    mode: "REAL",
+    locale: "es-419",
+    engineRulesVersion: V1_RULE_CONFIG.rulesVersion,
+    attemptIndex: selected.attemptIndex,
+    generatedAt: evidence.generatedAt,
+    serializedInitialGameState: candidate.serializedInitialState,
+    initialGameState: candidate.initialState,
+    publicBoard: candidate.initialState.board,
+    resolutionPlan,
+    entangledPairs: candidate.initialState.pairs,
+    sourceEntropyHash: evidence.sourceEntropyHash,
+    entropyBitsAccepted: evidence.entropyBitsAccepted,
+    entropyExpansionAlgorithm: "SHA-256 counter mode",
+    entropyExpansion,
+    evidenceRunId: evidence.evidencePath,
+    backend: evidence.backend,
+    jobIds: Object.freeze([evidence.job.jobId]),
+    evidenceHashes: evidence.artifactHashes,
+    bellSummary: evidence.bell,
+    chshSummary: sharedChsh,
+    scientificClassification: sharedChsh.classification,
+    provenanceNotice: CAMPAIGN_PROVENANCE_NOTICE,
+    clientDisclosure: CLIENT_DISCLOSURE,
+  };
+  return Object.freeze({
+    ...withoutCommitment,
+    commitment: calculateCommitment(withoutCommitment),
+  });
+};
+
+/** Builds a campaign-aware public index from already-validated playable artifacts. */
+export const compileCampaignUniverseIndex = (
+  universes: readonly DailyUniverse[],
+): DailyUniverseIndex => {
+  if (universes.length === 0) {
+    throw new Error("A campaign index requires at least one playable universe.");
+  }
+  const ordered = [...universes].sort(
+    (left, right) => left.universeNumber - right.universeNumber,
+  );
+  if (new Set(ordered.map(({ universeNumber }) => universeNumber)).size !== ordered.length) {
+    throw new Error("A campaign index cannot contain duplicate universe numbers.");
+  }
+  const latest = ordered.at(-1);
+  if (latest === undefined) {
+    throw new Error("A campaign index requires a latest universe.");
+  }
+  return Object.freeze({
+    schemaVersion: 1,
+    today: latest.dateUtc,
+    latest: latest.dateUtc,
+    universes: Object.freeze(ordered.map((universe) => Object.freeze({
+      dateUtc: universe.dateUtc,
+      universeId: universe.universeId,
+      universeNumber: universe.universeNumber,
+      mode: universe.mode,
+      commitment: universe.commitment,
+    }))),
+  });
+};

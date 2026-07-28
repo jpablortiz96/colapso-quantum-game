@@ -15,7 +15,8 @@ Kiro helped maintain continuity across a deliberately staged engineering process
 3. **Implementation** — make scoped changes while preserving typed contracts and immutable behavior outside the active stage.
 4. **Verification** — run tests, property checks, builds, evidence audits, privacy scans, packaging checks, and live production smoke tests; correct failures before continuing.
 5. **Evidence and documentation** — compare public claims against preserved artifacts and keep measurements distinct from interpretation.
-6. **Deployment and release** — automate AWS Amplify packaging and verification, capture real production screenshots, sanitize public history, and gate publication on CI.
+6. **Deployment and release** — automate AWS Amplify packaging and verification, prepare guarded local/remote screenshot workflows, sanitize public history, and gate publication on CI.
+7. **Five-universe campaign closure** — verify four additional preserved SamplerV2 results, keep Universe #001 byte-pinned, require explicit operator confirmation before #005 offline finalization, and expose primitive provenance without converting shared CHSH context into a direct-evidence claim.
 
 ## Human control
 
@@ -28,7 +29,7 @@ The developer remained responsible for:
 - reviewing source changes and generated artifacts;
 - controlling Git commits, GitHub publication, and release creation.
 
-Credentials were never delegated into public artifacts. Provider and cloud operations were explicit, bounded actions rather than background automation.
+Credentials were never delegated into public artifacts. Provider and cloud operations were explicit, bounded actions rather than background automation. The five-universe release sprint reused only preserved provider outputs: its finalization, tests, build, and package checks ran offline, while commit, push, deployment, and remote screenshot capture remained human-controlled.
 
 ## Working method
 

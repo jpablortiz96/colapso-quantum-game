@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 import {
+  CAMPAIGN_PROGRESS_KEY,
   PRODUCTION_PREFERENCES_KEY,
   TUTORIAL_PREFERENCE_KEY,
   useDailyGameStore,
@@ -42,6 +43,7 @@ describe("premium first-time player onboarding", () => {
       value: scrollIntoView,
     });
     window.localStorage.clear();
+    useDailyGameStore.getState().resetCampaignProgress();
     useDailyGameStore.getState().reset();
     useDailyGameStore.setState({ soundEnabled: true });
   });
@@ -60,6 +62,74 @@ describe("premium first-time player onboarding", () => {
     expect(screen.getByText("1. Observa")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "COMENZAR A JUGAR" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "DESCUBRE CÓMO FUNCIONA" })).toBeInTheDocument();
+  });
+
+  it("enforces sequential selection, exposes Spanish titles and resets campaign progress", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(screen.getByRole("heading", { name: "Elige un universo" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /Universo #00[1-5]/ })).toHaveLength(5);
+    expect(screen.getByRole("button", { name: /Universo #002 — Rutas Entrelazadas — Bloqueado/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Universo #005 — Tormenta Cuántica — Bloqueado/ })).toBeDisabled();
+
+    act(() => useDailyGameStore.setState({ completedUniverseNumbers: [1, 2, 3, 4] }));
+    window.localStorage.setItem(CAMPAIGN_PROGRESS_KEY, JSON.stringify({ completedUniverseNumbers: [1, 2, 3, 4] }));
+    await user.click(screen.getByRole("button", { name: /Universo #005 — Tormenta Cuántica — Disponible/ }));
+
+    expect(useDailyGameStore.getState().universe.universeNumber).toBe(5);
+    expect(useDailyGameStore.getState().campaignEntry.title).toBe("Quantum Storm");
+    expect(window.location.pathname).toBe("/universe/005");
+    expect(screen.getByRole("heading", { name: "Estabiliza una ruta dentro de la tormenta." })).toBeInTheDocument();
+    expect(document.querySelector('[data-universe="5"]')).not.toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Procedencia cuántica" }));
+    expect(await screen.findByText("Sampler directo · CHSH compartido")).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Cómo nació Tormenta Cuántica" })).toBeInTheDocument();
+    expect(screen.getByText(/no es evidencia EstimatorV2 directa de este universo/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Cerrar procedencia" }));
+    await user.click(screen.getByRole("button", { name: "Restablecer progreso de campaña" }));
+
+    expect(useDailyGameStore.getState().completedUniverseNumbers).toEqual([]);
+    expect(useDailyGameStore.getState().universe.universeNumber).toBe(1);
+    expect(window.localStorage.getItem(CAMPAIGN_PROGRESS_KEY)).toBeNull();
+    expect(window.location.pathname).toBe("/universe/001");
+  });
+
+  it("offers the selected universe's audited Guided Journey", async () => {
+    const user = userEvent.setup();
+    act(() => useDailyGameStore.setState({ completedUniverseNumbers: [1] }));
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Universo #002 — Rutas Entrelazadas — Disponible/ }));
+    await user.click(screen.getByRole("button", { name: "COMENZAR A JUGAR" }));
+
+    const guided = screen.getByRole("button", { name: /RUTA GUIADA/ });
+    expect(guided).toBeEnabled();
+    await user.click(guided);
+    await user.click(screen.getByRole("button", { name: "Comenzar experiencia" }));
+
+    expect(useDailyGameStore.getState().gameMode).toBe("GUIDED");
+    expect(await screen.findByText(/RUTA GUIADA · PASO 1 DE 23/)).toBeInTheDocument();
+  });
+
+  it("loads every stable universe route without mutating campaign completion", async () => {
+    const expectedTitles = [
+      "Primer Colapso",
+      "Rutas Entrelazadas",
+      "Protocolo del Vacío",
+      "Crisis de Energía",
+      "Tormenta Cuántica",
+    ];
+
+    for (let universeNumber = 1; universeNumber <= 5; universeNumber += 1) {
+      cleanup();
+      window.history.replaceState(null, "", `/universe/${String(universeNumber).padStart(3, "0")}`);
+      render(<App />);
+      await waitFor(() => expect(useDailyGameStore.getState().universe.universeNumber).toBe(universeNumber));
+      expect(screen.getAllByText(expectedTitles[universeNumber - 1] as string).length).toBeGreaterThan(0);
+      expect(useDailyGameStore.getState().completedUniverseNumbers).toEqual([]);
+    }
   });
 
   it("opens the Driver.js tour and scrolls the first focused target into view", async () => {

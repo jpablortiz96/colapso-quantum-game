@@ -2,7 +2,8 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
-import { GUIDED_JOURNEY } from "./components/guided-journey";
+import { GUIDED_JOURNEY, GUIDED_JOURNEYS } from "./components/guided-journey";
+import { getPlayableCampaignEntry } from "./daily-game/universe";
 import {
   deriveVisibleTacticalInfo,
   recommendPulseTarget,
@@ -37,6 +38,7 @@ function allFloorState(observations: number): GameState {
 describe("COLAPSO V2.1 balance and guided journey", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    useDailyGameStore.getState().resetCampaignProgress();
     useDailyGameStore.getState().reset();
     Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, value: vi.fn() });
     Object.defineProperty(window.navigator, "vibrate", { configurable: true, value: vi.fn() });
@@ -46,6 +48,7 @@ describe("COLAPSO V2.1 balance and guided journey", () => {
     cleanup();
     document.body.replaceChildren();
     window.localStorage.clear();
+    useDailyGameStore.getState().resetCampaignProgress();
     useDailyGameStore.getState().reset();
   });
 
@@ -86,7 +89,7 @@ describe("COLAPSO V2.1 balance and guided journey", () => {
 
     expect(document.querySelector(".game-shell--cockpit")).not.toBeNull();
     expect(document.querySelectorAll(".mission-cell")).toHaveLength(49);
-    expect(screen.getByRole("heading", { name: "Explora una ruta hacia la salida" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Traza una ruta hacia la salida" })).toBeInTheDocument();
     expect(screen.getByRole("progressbar", { name: /Presión de decoherencia:/ })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Observaciones y alerta activa" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Seleccionar posibilidad" })).toBeInTheDocument();
@@ -117,15 +120,28 @@ describe("COLAPSO V2.1 balance and guided journey", () => {
     expect(resources).toHaveTextContent("1");
   });
 
-  it("uses a versioned guided solution tied to Universe #001", () => {
-    expect(GUIDED_JOURNEY).toMatchObject({
-      version: 1,
-      universeNumber: 1,
-      rulesVersion: 1,
-      integrityReference: useDailyGameStore.getState().universe.commitment,
-      actionTranscriptSha256: "a4f4739a8aa52bcd37e95af9943e03666064db2682af9cc97cb010809bf8f756",
-    });
-    expect(GUIDED_JOURNEY.steps).toHaveLength(23);
+  it("uses five versioned guided solutions tied to their published universes", () => {
+    const expected = [
+      [1, 23, "a4f4739a8aa52bcd37e95af9943e03666064db2682af9cc97cb010809bf8f756"],
+      [2, 23, "9fc6f371e216bd5c1688e5beeb92c746908dceb6b41121fc9b01accf3067cb1c"],
+      [3, 23, "6d2f517d504286293c2e01a324faa5340ea216e5d0cd18ef54f04d46a5e2eeef"],
+      [4, 21, "aa324889bfd971d74698d2d4a6d0650ffe0aa69583ac322d44667f59df86712e"],
+      [5, 21, "e80826e7656d04bc82489b0695a8cc5e40894d2fd1fce4c61e86c11d77483a6f"],
+    ] as const;
+
+    for (const [universeNumber, stepCount, transcriptHash] of expected) {
+      const definition = GUIDED_JOURNEYS[universeNumber];
+      const entry = getPlayableCampaignEntry(universeNumber);
+      expect(entry).toBeDefined();
+      expect(definition).toMatchObject({
+        version: 1,
+        universeNumber,
+        rulesVersion: 1,
+        integrityReference: entry?.artifact.commitment,
+        actionTranscriptSha256: transcriptHash,
+      });
+      expect(definition.steps).toHaveLength(stepCount);
+    }
   });
 
   it("executes guided actions through F1 before advancing", () => {
@@ -303,9 +319,9 @@ describe("COLAPSO V2.1 balance and guided journey", () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole("button", { name: "Procedencia cuántica" }));
-    expect(await screen.findByRole("dialog", { name: "Cómo nació este universo" })).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "Cómo nació Primer Colapso" })).toBeInTheDocument();
     fireEvent.keyDown(window, { key: "Escape" });
-    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Cómo nació este universo" })).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Cómo nació Primer Colapso" })).not.toBeInTheDocument());
   });
 
   it("keeps canonical mission free of Pulses, rewind and guidance", () => {

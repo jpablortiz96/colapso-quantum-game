@@ -6290,3 +6290,315 @@ html[data-reduced-motion="reduce"] *::after {
     display: none;
   }
 }
+
+/* Five-universe campaign selector, evidence model, and finalized release themes. */
+[data-universe="1"] { --universe-accent: 103 232 249; --universe-secondary: 34 211 238; --universe-shadow: 8 145 178; }
+[data-universe="2"] { --universe-accent: 167 139 250; --universe-secondary: 45 212 191; --universe-shadow: 109 40 217; }
+[data-universe="3"] { --universe-accent: 232 121 249; --universe-secondary: 129 140 248; --universe-shadow: 88 28 135; }
+[data-universe="4"] { --universe-accent: 251 191 36; --universe-secondary: 251 146 60; --universe-shadow: 180 83 9; }
+[data-universe="5"] { --universe-accent: 96 165 250; --universe-secondary: 244 114 182; --universe-shadow: 30 64 175; }
+
+.intro-shell[data-universe] {
+  background:
+    linear-gradient(90deg, rgb(2 6 23 / 0.1) 0 32%, rgb(var(--universe-shadow) / 0.2) 60%, rgb(2 6 23 / 0.88) 100%),
+    radial-gradient(circle at 22% 24%, rgb(var(--universe-accent) / 0.16), transparent 34%),
+    url("/assets/colapso/backgrounds/hero_quantum_bg.webp") center / cover no-repeat;
+}
+
+.game-shell[data-universe] {
+  background:
+    radial-gradient(ellipse 66% 48% at 4% 2%, rgb(var(--universe-shadow) / 0.25), transparent 68%),
+    radial-gradient(ellipse 52% 40% at 94% 26%, rgb(var(--universe-secondary) / 0.12), transparent 72%),
+    linear-gradient(180deg, rgb(1 5 18), rgb(6 12 30) 52%, rgb(2 6 23));
+}
+
+.final-shell[data-universe] {
+  background:
+    radial-gradient(circle at 50% 48%, rgb(var(--universe-shadow) / 0.2), transparent 47%),
+    linear-gradient(180deg, rgb(2 6 23 / 0.34), transparent 34%, rgb(2 6 23 / 0.4)),
+    url("/assets/colapso/backgrounds/final_quantum_bg.webp") center / cover no-repeat;
+}
+
+.intro-shell[data-universe] .intro-card,
+.game-shell[data-universe] .mission-hud,
+.game-shell[data-universe] .mission-board,
+.game-shell[data-universe] .game-actions {
+  border-color: rgb(var(--universe-accent) / 0.32);
+}
+
+.intro-shell[data-universe] .eyebrow,
+.game-shell[data-universe] .eyebrow,
+.final-shell[data-universe] .eyebrow {
+  color: rgb(var(--universe-accent));
+}
+
+.intro-universe-title {
+  margin: 0.45rem 0 0;
+  color: rgb(var(--universe-accent));
+  font-size: clamp(0.82rem, 1.3vw, 1rem);
+  font-weight: 850;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.universe-selector {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.2rem;
+  border: 1px solid rgb(var(--universe-accent) / 0.22);
+  border-radius: 1.15rem;
+  padding: 0.9rem;
+  background: rgb(2 6 23 / 0.46);
+  backdrop-filter: blur(5px);
+}
+
+.universe-selector > header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.universe-selector h2 {
+  margin: 0.12rem 0 0;
+  color: rgb(241 245 249);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.universe-selector > header > span {
+  color: rgb(var(--universe-accent));
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.universe-progress {
+  height: 0.25rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(51 65 85 / 0.75);
+}
+
+.universe-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgb(var(--universe-accent)), rgb(var(--universe-secondary)));
+  transition: width 240ms ease-out;
+}
+
+.universe-selector__grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.universe-option {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 5.35rem;
+  align-content: space-between;
+  gap: 0.35rem;
+  overflow: hidden;
+  border: 1px solid rgb(100 116 139 / 0.52);
+  border-radius: 0.85rem;
+  padding: 0.62rem;
+  background: linear-gradient(145deg, rgb(30 41 59 / 0.72), rgb(2 6 23 / 0.68));
+  color: rgb(203 213 225);
+  text-align: left;
+  transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
+}
+
+.universe-option:hover:not(:disabled) {
+  border-color: rgb(var(--universe-accent) / 0.72);
+  transform: translateY(-1px);
+}
+
+.universe-option--selected {
+  border-color: rgb(var(--universe-accent));
+  background: linear-gradient(145deg, rgb(var(--universe-shadow) / 0.42), rgb(2 6 23 / 0.72));
+  box-shadow: 0 0 0 1px rgb(var(--universe-accent) / 0.16), 0 9px 20px rgb(2 6 23 / 0.28);
+}
+
+.universe-option--complete::after {
+  position: absolute;
+  top: -1.2rem;
+  right: -1.2rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: rgb(45 212 191 / 0.18);
+  content: "";
+}
+
+.universe-option:disabled {
+  border-style: dashed;
+  opacity: 0.56;
+}
+
+.universe-option > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+}
+
+.universe-option strong {
+  color: rgb(var(--universe-accent));
+  font-size: 0.69rem;
+  letter-spacing: 0.08em;
+}
+
+.universe-option small {
+  overflow: hidden;
+  color: rgb(148 163 184);
+  font-size: 0.55rem;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.universe-option b {
+  overflow: hidden;
+  color: rgb(241 245 249);
+  font-size: 0.72rem;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+}
+
+.universe-option i {
+  position: absolute;
+  right: 0.55rem;
+  bottom: 0.45rem;
+  color: rgb(var(--universe-accent));
+  font-size: 0.68rem;
+  font-style: normal;
+}
+
+.universe-selector > p {
+  margin: 0;
+  color: rgb(148 163 184);
+  font-size: 0.65rem;
+  line-height: 1.45;
+}
+
+.universe-selector__reset {
+  justify-self: end;
+  border: 0;
+  padding: 0.2rem 0;
+  background: transparent;
+  color: rgb(148 163 184);
+  font-size: 0.62rem;
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
+}
+
+.universe-selector__reset:hover {
+  color: rgb(var(--universe-accent));
+}
+
+.mode-card:disabled {
+  border-style: dashed;
+  opacity: 0.52;
+  filter: saturate(0.45);
+}
+
+.provenance-model {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid rgb(103 232 249 / 0.24);
+  border-radius: 0.8rem;
+  padding: 0.65rem 0.8rem;
+  background: rgb(8 47 73 / 0.34);
+  color: rgb(207 250 254);
+  font-size: 0.72rem;
+}
+
+.provenance-model span {
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.provenance-model strong {
+  color: white;
+}
+
+.finished-card__universe {
+  margin: 0.45rem 0 0;
+  color: rgb(var(--universe-accent));
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 900px) {
+  .intro-card--juice {
+    width: min(100%, 44rem);
+    margin-right: 0;
+  }
+
+  .universe-selector__grid {
+    grid-template-columns: repeat(5, minmax(7rem, 1fr));
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    padding-bottom: 0.25rem;
+    scrollbar-width: thin;
+  }
+}
+
+@media (max-width: 639px) {
+  .intro-shell[data-universe] {
+    align-items: start;
+    padding: 0.65rem;
+    background:
+      linear-gradient(180deg, rgb(var(--universe-shadow) / 0.18), rgb(2 6 23 / 0.92) 45%),
+      url("/assets/colapso/backgrounds/hero_quantum_bg.webp") center / cover no-repeat;
+  }
+
+  .intro-card--juice {
+    border-radius: 1.25rem;
+    padding: 1rem;
+  }
+
+  .universe-selector {
+    margin-top: 0.9rem;
+    padding: 0.72rem;
+  }
+
+  .universe-selector > header {
+    align-items: start;
+  }
+
+  .universe-selector__grid {
+    margin-inline: -0.15rem;
+    padding-inline: 0.15rem;
+  }
+
+  .universe-option {
+    scroll-snap-align: start;
+  }
+
+  .provenance-model {
+    align-items: start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .universe-option,
+  .universe-progress > span {
+    transition: none !important;
+  }
+
+  .universe-option:hover:not(:disabled) {
+    transform: none;
+  }
+}

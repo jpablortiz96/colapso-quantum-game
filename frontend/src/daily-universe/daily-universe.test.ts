@@ -6,16 +6,25 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
+  CAMPAIGN_UNIVERSE_IDENTITIES,
   FIRST_UNIVERSE_DATE,
+  PINNED_FIRST_COMMITMENT,
+  assertCampaignBundle,
   canonicalJson,
   canonicalUtf8Bytes,
+  compileCampaignUniverse,
   compileDailyUniverse,
   deriveAttemptKey,
   expandCounterMode,
+  finalizeCampaign,
   hasValidCommitment,
+  prepareFinalizedCampaign,
+  readFinalizableCampaignEvidence,
   readLockedRealEvidence,
   selectFirstPlayableCandidate,
   sha256Hex,
+  verifyCampaign,
+  verifyFinalizedCampaign,
   verifyPublishedUniverse,
   writeCanonicalJsonAtomically,
 } from "./index";
@@ -265,5 +274,152 @@ describe("daily universe compiler", () => {
     } finally {
       fs.rmSync(temporaryRoot, { recursive: true, force: true });
     }
+  });
+
+  it("strictly validates and deterministically compiles campaign evidence #2-#5", () => {
+    const complete = readFinalizableCampaignEvidence(repositoryRoot);
+    const locked = evidence();
+    expect(complete.map(({ universeNumber }) => universeNumber)).toEqual([2, 3, 4, 5]);
+
+    for (const source of complete) {
+      expect(Object.keys(source.artifactHashes)).toHaveLength(9);
+      expect(source.job).toMatchObject({
+        primitive: "SamplerV2",
+        status: "DONE",
+        backend: "ibm_fez",
+      });
+      expect(source.directEvidence).toMatchObject({
+        jobId: source.job.jobId,
+        shots: 256,
+        commitmentScope: "ACQUISITION_EVIDENCE_INPUTS_NOT_COMPILED_BOARD",
+      });
+      expect(source.sourceEntropyHash).toBe(
+        sha256Hex(Buffer.from(source.entropyBytesHex, "hex")),
+      );
+
+      const compiled = compileCampaignUniverse(source, locked.chsh);
+      const identity = CAMPAIGN_UNIVERSE_IDENTITIES[source.universeNumber];
+      expect(compiled).toMatchObject({
+        universeNumber: source.universeNumber,
+        universeId: identity.universeId,
+        dateUtc: identity.dateUtc,
+        sourceEntropyHash: source.sourceEntropyHash,
+        chshSummary: locked.chsh,
+      });
+      expect(compiled.jobIds).toEqual([source.job.jobId]);
+      expect(compiled.entropyExpansion.inputMaterial).toBe(
+        "accepted-entropy.json:entropy_bytes_hex",
+      );
+      expect(compiled.provenanceNotice).toContain("SamplerV2 directa");
+      expect(compiled.provenanceNotice).toContain("compartida y fijada del universo #1");
+      expect(canonicalUtf8Bytes(compiled)).toEqual(
+        canonicalUtf8Bytes(compileCampaignUniverse(source, locked.chsh)),
+      );
+    }
+  });
+
+  it("builds an exact finalized five-entry campaign from preserved evidence", () => {
+    const prepared = prepareFinalizedCampaign(repositoryRoot);
+    expect(() => assertCampaignBundle(prepared.bundle)).not.toThrow();
+    expect(prepared.bundle.entries).toHaveLength(5);
+    expect(prepared.bundle.entries.map(({ provenance }) => provenance.kind)).toEqual([
+      "DIRECT_DUAL_PRIMITIVE",
+      "DIRECT_SAMPLER_SHARED_CHSH",
+      "DIRECT_SAMPLER_SHARED_CHSH",
+      "DIRECT_SAMPLER_SHARED_CHSH",
+      "DIRECT_SAMPLER_SHARED_CHSH",
+    ]);
+    expect(prepared.bundle.entries.every((entry) =>
+      entry.playable &&
+      entry.artifact !== null &&
+      entry.evidenceStatus === "verified" &&
+      entry.publicationStatus === "published"
+    )).toBe(true);
+
+    const first = prepared.bundle.entries[0];
+    expect(first?.playable).toBe(true);
+    if (first?.playable !== true) {
+      throw new Error("Campaign entry #1 must be playable.");
+    }
+    const pinnedPublic = fs.readFileSync(path.join(
+      repositoryRoot,
+      "frontend",
+      "public",
+      "data",
+      "universes",
+      "2026-07-22.json",
+    ));
+    const pinnedSource = fs.readFileSync(path.join(
+      repositoryRoot,
+      "frontend",
+      "src",
+      "daily-game",
+      "published-universe.json",
+    ));
+    expect(pinnedPublic).toEqual(pinnedSource);
+    expect(Buffer.from(canonicalUtf8Bytes(first.artifact))).toEqual(pinnedPublic);
+    expect(first.artifact.commitment).toBe(PINNED_FIRST_COMMITMENT);
+
+    const fifth = prepared.bundle.entries[4];
+    expect(fifth).toMatchObject({
+      universeNumber: 5,
+      title: "Quantum Storm",
+      evidenceStatus: "verified",
+      publicationStatus: "published",
+      playable: true,
+      provenance: {
+        kind: "DIRECT_SAMPLER_SHARED_CHSH",
+        directEvidence: {
+          jobId: "d9juap0ii2cc73efdch0",
+          primitive: "SamplerV2",
+        },
+      },
+    });
+    expect(fifth?.artifact?.commitment).toBe(
+      "c4cfc1afeb0da6b7223fa1a994bf240883a465d18c9a3acf48234696badf2a56",
+    );
+  });
+
+  it("rejects artifact/playability inconsistency at the browser-safe boundary", () => {
+    const invalid = JSON.parse(canonicalJson(prepareFinalizedCampaign(repositoryRoot).bundle)) as {
+      entries: Array<Record<string, unknown>>;
+    };
+    const fifth = invalid.entries[4];
+    if (fifth === undefined) {
+      throw new Error("Campaign entry #5 is unavailable.");
+    }
+    fifth.artifact = null;
+    expect(() => assertCampaignBundle(invalid)).toThrow("Invalid campaign bundle");
+  });
+
+  it("verifies the finalized campaign read-only and finalizes idempotently", () => {
+    const outputPaths = [
+      "frontend/public/data/universes/2026-07-22.json",
+      "frontend/public/data/universes/2026-07-23.json",
+      "frontend/public/data/universes/2026-07-24.json",
+      "frontend/public/data/universes/2026-07-25.json",
+      "frontend/public/data/universes/2026-07-26.json",
+      "frontend/public/data/universes/campaign.json",
+      "frontend/public/data/universes/index.json",
+      "frontend/src/daily-game/published-universe.json",
+      "frontend/src/daily-game/published-campaign.json",
+    ].map((relative) => path.join(repositoryRoot, ...relative.split("/")));
+    const before = outputPaths.map((target) => Object.freeze({
+      bytes: fs.readFileSync(target),
+      modified: fs.statSync(target).mtimeMs,
+    }));
+
+    expect(verifyFinalizedCampaign(repositoryRoot)).toMatchObject({ ok: true, issues: [] });
+    expect(verifyCampaign(repositoryRoot)).toMatchObject({ ok: true, issues: [] });
+    outputPaths.forEach((target, index) => {
+      expect(fs.readFileSync(target)).toEqual(before[index]?.bytes);
+      expect(fs.statSync(target).mtimeMs).toBe(before[index]?.modified);
+    });
+
+    const finalized = finalizeCampaign(repositoryRoot);
+    expect(finalized.bundle.entries).toHaveLength(5);
+    expect(finalized.commitments["5"]).toBe(
+      "c4cfc1afeb0da6b7223fa1a994bf240883a465d18c9a3acf48234696badf2a56",
+    );
   });
 });

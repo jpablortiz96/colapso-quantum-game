@@ -8,7 +8,12 @@ import {
 } from "framer-motion";
 import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties } from "react";
 import { calculateScore, type GameState } from "../engine";
-import { useDailyGameStore } from "../store/daily-game-store";
+import type { UniverseNumber } from "../daily-universe/client";
+import { getUniverseDisplayTitle } from "../daily-game/universe";
+import {
+  isCampaignUniverseUnlocked,
+  useDailyGameStore,
+} from "../store/daily-game-store";
 import { colapsoAssets } from "./colapso-assets";
 import {
   CoherenceMeter,
@@ -17,7 +22,7 @@ import {
   MissionControlOverlays,
   QuantumPulseControl,
 } from "./MissionControlV2";
-import { GUIDED_JOURNEY } from "./guided-journey";
+import { getGuidedJourney } from "./guided-journey";
 import {
   decoherencePressureCue,
   deriveConsoleStatus,
@@ -66,6 +71,38 @@ const outcomeNames: Record<CellOutcome, string> = {
 };
 
 const distributionOutcomes: readonly CellOutcome[] = ["FLOOR", "WALL", "VOID", "CRYSTAL", "BATTERY"];
+
+const universeNarrative = Object.freeze({
+  1: Object.freeze({
+    kicker: "El origen de la campaña",
+    headline: "Observa antes de que el universo decida por ti.",
+    copy: "Tu misión es llevar al Observador desde la esquina inferior izquierda hasta la salida dorada.",
+  }),
+  2: Object.freeze({
+    kicker: "Rutas entrelazadas",
+    headline: "Cada posibilidad puede alterar otra ruta.",
+    copy: "Explora Rutas Entrelazadas: un tablero distinto compilado desde su propia evidencia SamplerV2 preservada.",
+  }),
+  3: Object.freeze({
+    kicker: "Protocolo del vacío",
+    headline: "Cruza la incertidumbre sin perder tu reserva.",
+    copy: "Protocolo del Vacío exige leer el campo, proteger la energía y avanzar sin observar más de lo necesario.",
+  }),
+  4: Object.freeze({
+    kicker: "Energía crítica",
+    headline: "Cada observación pesa cuando la energía escasea.",
+    copy: "Crisis de Energía convierte la administración de recursos en el centro de una nueva misión reproducible.",
+  }),
+  5: Object.freeze({
+    kicker: "Tormenta cuántica",
+    headline: "Estabiliza una ruta dentro de la tormenta.",
+    copy: "Tormenta Cuántica completa la campaña con un quinto universo compilado desde evidencia preservada y verificada offline.",
+  }),
+} satisfies Readonly<Record<UniverseNumber, Readonly<{
+  kicker: string;
+  headline: string;
+  copy: string;
+}>>>);
 
 function sameCoordinate(first: Coordinate, second: Coordinate): boolean {
   return first.row === second.row && first.col === second.col;
@@ -241,8 +278,11 @@ function Board() {
     gameMode,
     guidedStep,
     guidanceActive,
+    universe,
   } = useDailyGameStore();
-  const guidedTarget = gameMode === "GUIDED" && guidanceActive ? GUIDED_JOURNEY.steps[guidedStep]?.action.target ?? null : null;
+  const guidedTarget = gameMode === "GUIDED" && guidanceActive
+    ? getGuidedJourney(universe.universeNumber).steps[guidedStep]?.action.target ?? null
+    : null;
   const reducedMotion = useReducedMotion() ?? false;
   const previousBoard = useRef(gameState.board);
   const collapseTimeout = useRef<number | undefined>(undefined);
@@ -425,7 +465,7 @@ function Board() {
 }
 
 function CommandBar() {
-  const { gameState, messages, universe, gameMode, panel, togglePanel } = useDailyGameStore();
+  const { gameState, messages, universe, campaignEntry, gameMode, panel, togglePanel } = useDailyGameStore();
   const reducedMotion = useReducedMotion() ?? false;
   const energyLevel = Math.min(1, Math.max(0, gameState.energy / 5));
   const decoherencePulsing = messages.some((message) => message.toLowerCase().includes("universo colapsó"));
@@ -440,8 +480,8 @@ function CommandBar() {
       <header className="mission-hud__identity">
         <span className="mission-hud__signal" aria-hidden="true" />
         <div>
-          <span>COLAPSO · Universo #{universe.universeNumber}</span>
-          <h1>Explora una ruta hacia la salida</h1>
+          <span>COLAPSO · Universo #{universe.universeNumber} · {getUniverseDisplayTitle(campaignEntry.universeNumber)}</span>
+          <h1>{universeNarrative[universe.universeNumber].headline}</h1>
           <p className="cockpit-objective" data-tour="mission-goal">Llega a la salida dorada; no necesitas descubrir todo el tablero.</p>
         </div>
       </header>
@@ -624,7 +664,7 @@ const helpCards = [
 ] as const;
 
 function Details() {
-  const { panel, togglePanel, repeatTutorial, openPanel } = useDailyGameStore();
+  const { panel, togglePanel, repeatTutorial, openPanel, universe } = useDailyGameStore();
   const helpOpen = panel === "HELP";
   const provenanceOpen = panel === "PROVENANCE";
 
@@ -633,7 +673,7 @@ function Details() {
       <button aria-expanded={helpOpen} className="details-trigger" onClick={() => { unlockGameSound(); playGameSound("panel"); togglePanel("HELP"); }} type="button"><span><span aria-hidden="true" className="details-trigger__icon">?</span> Cómo jugar</span><span aria-hidden="true">{helpOpen ? "−" : "+"}</span></button>
       <AnimatePresence initial={false}>{helpOpen && <motion.div className="mt-4 space-y-2" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }}>
         {helpCards.map(([icon, title, copy], index) => <details key={title} className="help-card" open={index === 0}><summary><span aria-hidden="true">{icon}</span><strong>{title}</strong></summary><p>{copy}</p></details>)}
-        <details className="help-card difficulty-help"><summary><span aria-hidden="true">△</span><strong>¿POR QUÉ ESTE UNIVERSO ES DIFÍCIL?</strong></summary><p>El Universo #001 fue compilado una sola vez y no cambia para favorecerte después de comenzar. Algunas rutas exigen administrar recursos o encontrar una batería antes de agotar tus observaciones.</p><ul><li>No observes todo el tablero.</li><li>Busca una ruta directa.</li><li>Una batería puede ser decisiva.</li><li>La decoherencia puede abrir o cerrar opciones.</li><li>Los Pulsos sugieren, pero no revelan.</li><li>La Ruta Guiada enseña una solución verificable.</li><li>Perder también revela información útil sobre el universo.</li></ul></details>
+        <details className="help-card difficulty-help"><summary><span aria-hidden="true">△</span><strong>¿POR QUÉ ESTE UNIVERSO ES DIFÍCIL?</strong></summary><p>El Universo #{String(universe.universeNumber).padStart(3, "0")} fue compilado una sola vez desde evidencia preservada y no cambia para favorecerte después de comenzar. Algunas rutas exigen administrar recursos o encontrar una batería antes de agotar tus observaciones.</p><ul><li>No observes todo el tablero.</li><li>Busca una ruta directa.</li><li>Una batería puede ser decisiva.</li><li>La decoherencia puede abrir o cerrar opciones.</li><li>Los Pulsos sugieren, pero no revelan.</li><li>La Ruta Guiada enseña una solución verificable.</li><li>Perder también revela información útil sobre el universo.</li></ul></details>
         <button className="repeat-tutorial" onClick={() => { unlockGameSound(); playGameSound("panel"); repeatTutorial(); }} type="button">Repetir tutorial</button>
       </motion.div>}</AnimatePresence>
     </section>
@@ -720,23 +760,76 @@ function HeroBrand() {
   </div>;
 }
 
+function UniverseSelector() {
+  const {
+    campaignEntries,
+    completedUniverseNumbers,
+    universe,
+    selectUniverse,
+    resetCampaignProgress,
+  } = useDailyGameStore();
+  const completed = completedUniverseNumbers.length;
+  const playable = campaignEntries.filter((entry) => entry.playable).length;
+
+  return <section aria-labelledby="universe-selector-title" className="universe-selector">
+    <header>
+      <div><p className="eyebrow">Campaña preservada</p><h2 id="universe-selector-title">Elige un universo</h2></div>
+      <span>{completed}/{playable} completados</span>
+    </header>
+    <div aria-label="Progreso de campaña" aria-valuemax={playable} aria-valuemin={0} aria-valuenow={completed} className="universe-progress" role="progressbar"><span style={{ width: `${playable === 0 ? 0 : (completed / playable) * 100}%` }} /></div>
+    <div className="universe-selector__grid">
+      {campaignEntries.map((entry) => {
+        const selected = entry.universeNumber === universe.universeNumber;
+        const complete = completedUniverseNumbers.includes(entry.universeNumber);
+        const unlocked = entry.playable && (selected || isCampaignUniverseUnlocked(entry.universeNumber, completedUniverseNumbers));
+        const status = !entry.playable ? "No disponible" : complete ? "Completado" : selected ? "Seleccionado" : unlocked ? "Disponible" : "Bloqueado";
+        const identifier = `#${String(entry.universeNumber).padStart(3, "0")}`;
+        const displayTitle = getUniverseDisplayTitle(entry.universeNumber);
+        return <button
+          key={entry.universeNumber}
+          aria-label={`Universo ${identifier} — ${displayTitle} — ${status}`}
+          aria-pressed={selected}
+          className={`universe-option ${selected ? "universe-option--selected" : ""} ${complete ? "universe-option--complete" : ""} ${!unlocked ? "universe-option--locked" : ""}`}
+          data-universe-option={entry.universeNumber}
+          disabled={!unlocked}
+          onClick={() => {
+            if (selected) return;
+            unlockGameSound();
+            if (selectUniverse(entry.universeNumber)) playGameSound("select");
+          }}
+          type="button"
+        >
+          <span><strong>{identifier}</strong><small>{status}</small></span>
+          <b>{displayTitle}</b>
+          <i aria-hidden="true">{!unlocked ? "▣" : complete ? "✓" : selected ? "●" : "○"}</i>
+        </button>;
+      })}
+    </div>
+    <p>Los cinco tableros fueron compilados previamente: cambiar de universo nunca ejecuta un job ni realiza una solicitud de red.</p>
+    <button className="universe-selector__reset" onClick={resetCampaignProgress} type="button">Restablecer progreso de campaña</button>
+  </section>;
+}
+
 function Intro() {
-  const { universe, openPanel, guidedError, resetPreferences } = useDailyGameStore();
+  const { universe, campaignEntry, openPanel, guidedError, resetPreferences } = useDailyGameStore();
   const [preferencesReset, setPreferencesReset] = useState(false);
   const reducedMotion = useReducedMotion() ?? false;
   const universeId = String(universe.universeNumber).padStart(3, "0");
+  const narrative = universeNarrative[universe.universeNumber];
 
-  return <motion.main className="intro-shell intro-shell--juice" initial={{ opacity: 0, y: reducedMotion ? 0 : 8 }} animate={{ opacity: 1, y: 0 }} onKeyDown={(event) => unlockFromKeyboard(event.key)} onPointerDown={unlockGameSound} transition={{ duration: reducedMotion ? 0 : 0.28, ease: [0.16, 1, 0.3, 1] }}>
+  return <motion.main className="intro-shell intro-shell--juice" data-universe={universe.universeNumber} initial={{ opacity: 0, y: reducedMotion ? 0 : 8 }} animate={{ opacity: 1, y: 0 }} onKeyDown={(event) => unlockFromKeyboard(event.key)} onPointerDown={unlockGameSound} transition={{ duration: reducedMotion ? 0 : 0.28, ease: [0.16, 1, 0.3, 1] }}>
     <HeroAtmosphere />
     <section aria-labelledby="daily-title" className="intro-card intro-card--juice">
       <HeroBrand />
       <div className="intro-universe-chip"><span className="intro-universe-chip__pulse" aria-hidden="true" /><span>Real quantum universe</span><strong>#{universeId}</strong><span className="intro-universe-chip__detail">evidencia publicada</span></div>
-      <p className="eyebrow">COLAPSO <span aria-hidden="true">·</span> Universo #{universe.universeNumber}</p>
-      <h1 id="daily-title">Observa antes de que el universo decida por ti.</h1>
-      <p className="intro-copy">Tu misión es llevar al Observador desde la esquina inferior izquierda hasta la salida dorada.</p>
+      <p className="eyebrow">COLAPSO <span aria-hidden="true">·</span> {narrative.kicker}</p>
+      <p className="intro-universe-title">{getUniverseDisplayTitle(campaignEntry.universeNumber)}</p>
+      <h1 id="daily-title">{narrative.headline}</h1>
+      <p className="intro-copy">{narrative.copy}</p>
       {guidedError !== null && <p aria-live="assertive" className="guided-route-error" role="alert">{guidedError} Elige otro modo o vuelve a intentarlo más tarde.</p>}
       <ol className="intro-steps"><li><strong>1. Observa</strong><span>Descubre cada posibilidad.</span></li><li><strong>2. Avanza</strong><span>Elige casillas seguras.</span></li><li><strong>3. Anticípate</strong><span>El universo también decide.</span></li></ol>
       <dl className="intro-metadata"><div><dt>Fecha</dt><dd>{universe.dateUtc}</dd></div><div><dt>Universo</dt><dd>REAL #{universe.universeNumber.toString().padStart(3, "0")}</dd></div><div><dt>Backend</dt><dd>{universe.backend}</dd></div></dl>
+      <UniverseSelector />
       <div className="intro-entry-actions"><button aria-label="COMENZAR A JUGAR" className="intro-primary intro-primary--juice" onClick={() => { unlockGameSound(); playGameSound("cta"); openPanel("MODES"); }} type="button"><span>COMENZAR A JUGAR</span><small>Elige entre desafío, exploración o guía</small></button><button aria-label="DESCUBRE CÓMO FUNCIONA" className="intro-secondary intro-secondary--learn" onClick={() => { unlockGameSound(); playGameSound("panel"); openPanel("ONBOARDING"); }} type="button"><span>DESCUBRE CÓMO FUNCIONA</span><small>Aprende observación, recursos y decoherencia</small></button></div>
       <button aria-haspopup="dialog" aria-label="Procedencia cuántica" className="intro-provenance-link" onClick={() => { unlockGameSound(); playGameSound("panel"); openPanel("PROVENANCE"); }} type="button">Consultar procedencia cuántica</button>
       <div className="intro-preferences">
@@ -766,11 +859,29 @@ function AnimatedScore({ score }: { readonly score: number }) {
 }
 
 function Finished() {
-  const { gameState, gameMode, metrics, guidedStep, rewindsUsed, retry, reset, changeMode, selectMode, openPanel } = useDailyGameStore();
+  const {
+    campaignEntries,
+    campaignEntry,
+    gameState,
+    gameMode,
+    metrics,
+    guidedStep,
+    rewindsUsed,
+    retry,
+    reset,
+    changeMode,
+    selectMode,
+    selectNextUniverse,
+    openPanel,
+  } = useDailyGameStore();
   const reducedMotion = useReducedMotion() ?? false;
   const won = gameState.status === "VICTORY";
   const score = calculateScore(gameState);
   const isGuided = gameMode === "GUIDED";
+  const journey = getGuidedJourney(campaignEntry.universeNumber);
+  const nextUniverse = campaignEntries.find(
+    (entry) => entry.universeNumber > campaignEntry.universeNumber && entry.playable,
+  );
   const modeLabel = isGuided ? won ? "RUTA GUIADA COMPLETADA" : "RUTA GUIADA" : gameMode === "EXPLORER" ? "MODO EXPLORADOR" : "MISIÓN CUÁNTICA";
   const resultLabel = isGuided ? "RUTA GUIADA" : gameMode === "EXPLORER" ? "ASISTIDO" : "CANÓNICO";
   const launchMode = (mode: GameMode) => { selectMode(mode); retry(); };
@@ -784,14 +895,16 @@ function Finished() {
     </div>
     <div aria-hidden="true" className="finished-card__sigil">{won ? "✦" : "◌"}</div>
     <p className="eyebrow">{won ? "Resultado · universo estabilizado" : "Resultado · ruta colapsada"}</p>
+    <p className="finished-card__universe">Universo #{String(campaignEntry.universeNumber).padStart(3, "0")} · {getUniverseDisplayTitle(campaignEntry.universeNumber)}</p>
     <h2 id="result-heading">{won ? "Llegaste a la salida" : "La ruta se cerró"}</h2>
     <p className="finished-card__message">{isGuided ? won ? "Completaste una solución verificable ejecutada paso a paso mediante F1." : "La Ruta Guiada se detuvo antes de completar la solución verificable." : gameMode === "EXPLORER" ? "Este resultado asistido conserva el score F1 y registra las ayudas de presentación utilizadas." : won ? "Convertiste incertidumbre en una ruta canónica." : "Recalibra el campo y vuelve a intentarlo cuando quieras."}</p>
     <div className="finished-card__mode"><span>{modeLabel}</span><strong>{resultLabel}</strong></div>
     {!isGuided && <div className="finished-score-panel"><span>{gameMode === "EXPLORER" ? "Puntaje F1 · resultado no competitivo" : "Puntaje oficial"}</span><strong><AnimatedScore score={score} /></strong></div>}
     <div className="finished-card__status"><span>{won ? "✦ Ruta asegurada" : "◌ Energía dispersa"}</span><span>{gameState.turn} turnos</span></div>
-    {isGuided ? <><dl className="mission-metrics mission-metrics--guided" aria-label="Métricas de Ruta Guiada"><div><dt>Pasos completados</dt><dd>{guidedStep}/{GUIDED_JOURNEY.steps.length}</dd></div><div><dt>Rebobinados</dt><dd>{rewindsUsed}/3</dd></div><div><dt>Acciones F1</dt><dd>{metrics.moves + metrics.observations}</dd></div></dl><section className="learned-concepts"><h3>Conceptos aprendidos</h3><ul><li>Observación</li><li>Recursos</li><li>Decoherencia</li><li>Replay verificable</li></ul></section></> : <dl className="mission-metrics" aria-label="Métricas de la misión"><div><dt>Movimientos</dt><dd>{metrics.moves}</dd></div><div><dt>Observaciones</dt><dd>{metrics.observations}</dd></div><div><dt>Decoherencias</dt><dd>{metrics.decoherences}</dd></div>{gameMode === "EXPLORER" && <><div><dt>Pulsos usados</dt><dd>{metrics.pulsesUsed}</dd></div><div><dt>Coherence Bursts</dt><dd>{metrics.coherenceBursts}</dd></div></>}<div><dt>Flow máximo</dt><dd>{metrics.maxFlow}/3</dd></div></dl>}
+    {isGuided ? <><dl className="mission-metrics mission-metrics--guided" aria-label="Métricas de Ruta Guiada"><div><dt>Pasos completados</dt><dd>{guidedStep}/{journey.steps.length}</dd></div><div><dt>Rebobinados</dt><dd>{rewindsUsed}/3</dd></div><div><dt>Acciones F1</dt><dd>{metrics.moves + metrics.observations}</dd></div></dl><section className="learned-concepts"><h3>Conceptos aprendidos</h3><ul><li>Observación</li><li>Recursos</li><li>Decoherencia</li><li>Replay verificable</li></ul></section></> : <dl className="mission-metrics" aria-label="Métricas de la misión"><div><dt>Movimientos</dt><dd>{metrics.moves}</dd></div><div><dt>Observaciones</dt><dd>{metrics.observations}</dd></div><div><dt>Decoherencias</dt><dd>{metrics.decoherences}</dd></div>{gameMode === "EXPLORER" && <><div><dt>Pulsos usados</dt><dd>{metrics.pulsesUsed}</dd></div><div><dt>Coherence Bursts</dt><dd>{metrics.coherenceBursts}</dd></div></>}<div><dt>Flow máximo</dt><dd>{metrics.maxFlow}/3</dd></div></dl>}
     <LazyModuleBoundary label="El recorrido reproducible no pudo cargarse." resetKey={`${gameMode ?? "NONE"}-${gameState.status}`}><Suspense fallback={<LazyFallback label="Cargando recorrido…" />}><LazyFinalRouteMap /></Suspense></LazyModuleBoundary>
     <div className="finished-actions">
+      {won && nextUniverse !== undefined && <button className="intro-primary finished-card__cta" onClick={() => { selectNextUniverse(); }} type="button">Siguiente universo · #{String(nextUniverse.universeNumber).padStart(3, "0")}</button>}
       {gameMode === "QUANTUM_MISSION" && <button className="intro-primary finished-card__cta" onClick={retry} type="button">Volver a intentar</button>}
       {gameMode === "EXPLORER" && <button className="intro-primary finished-card__cta" onClick={() => launchMode("QUANTUM_MISSION")} type="button">Intentar Misión Cuántica</button>}
       {isGuided && <><button className="intro-primary finished-card__cta" onClick={() => launchMode("EXPLORER")} type="button">Jugar en Explorador</button><button className="intro-secondary" onClick={() => launchMode("QUANTUM_MISSION")} type="button">Intentar Misión Cuántica</button></>}
@@ -823,7 +936,7 @@ export function DailyGame() {
 
   return <>
     <KeyboardController />
-    {phase === "INTRO" ? <Intro /> : <main className={shellClass} data-decoherence-pressure={finished ? undefined : decoherencePressure.level} data-resource-alert={finished ? undefined : resourceAlert.level} onKeyDown={(event) => unlockFromKeyboard(event.key)} onPointerDown={unlockGameSound}>
+    {phase === "INTRO" ? <Intro /> : <main className={shellClass} data-universe={universe.universeNumber} data-decoherence-pressure={finished ? undefined : decoherencePressure.level} data-resource-alert={finished ? undefined : resourceAlert.level} onKeyDown={(event) => unlockFromKeyboard(event.key)} onPointerDown={unlockGameSound}>
       <MissionSoundEffects /><QuantumFeedbackEffects />
       {finished ? <>
         <FinalAtmosphere won={won} />

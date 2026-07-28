@@ -4,6 +4,10 @@ COLAPSO is a 7×7 route-finding puzzle. You control the Observer, beginning at t
 
 The player interface is Spanish (`es-419`). This guide uses the exact Spanish control labels where useful.
 
+## Five-universe campaign
+
+The landing screen lists five finalized, evidence-verified universes: Origin Universe, Entangled Paths, The Void Protocol, Energy Crisis, and Quantum Storm. Selecting an entry rebuilds the board, deterministic entropy source, narrative, and theme from that entry's published artifact; it never submits a job or performs a provider request. A victory marks the selected universe complete for the current browser session, and the result offers the next campaign entry. Verified entries are selectable independently of completion order.
+
 ## Single-screen cockpit
 
 Active gameplay uses a board-first cockpit on supported desktop viewports of at least 1100×680:
@@ -16,7 +20,7 @@ Active gameplay uses a board-first cockpit on supported desktop viewports of at 
 
 Tablet and mobile layouts preserve a natural page flow. The console does not introduce a second vertical scrollbar, its mobile collapse control remains available, and dialogs retain bounded internal overflow when their content requires it.
 
-This layout is presentation-only. It does not alter observations, energy, movement, powers, decoherence, score, hidden outcomes, replay, or the published universe.
+This layout is presentation-only. It does not alter observations, energy, movement, powers, decoherence, score, hidden outcomes, replay, or any selected published universe.
 
 ## Core loop
 
@@ -92,7 +96,7 @@ A Quantum Pulse suggests a visible target but does not reveal or change its outc
 
 ### Guided Journey (`RUTA GUIADA`)
 
-A 23-step walkthrough of one audited solution for Universe #001:
+Each universe has a commitment-bound walkthrough of one audited solution: 23 steps for Universes #001–#003 and 21 steps for Universes #004–#005. The selected board always uses its own transcript rather than replaying another universe's guidance:
 
 - 13 starting observations;
 - exact next-action guidance;
@@ -135,8 +139,8 @@ A completed result includes a 7×7 route map showing the start, path, observed c
 - High-contrast pressure and resource states with text labels
 - Safe operation when local preference storage is unavailable
 
-Only local preferences are stored: mute, reduced-motion choice, tutorial completion, last selected mode, and audio consent. Game progress is intentionally not uploaded.
+Local storage contains two validated records: presentation preferences (mute, reduced-motion choice, tutorial completion, last selected mode, and audio consent) and campaign progress (completed universe numbers only). No game state, score, transcript, board, hidden result, provider data, or credential is uploaded or persisted; campaign progress has an explicit reset.
 
 ## Provenance inside the game
 
-Select `Consultar procedencia cuántica` on the landing screen, or `Ver procedencia` after a result. The modal presents the evidence pipeline, exact universe facts, integrity reference, and scientific boundaries. See [QUANTUM_PROVENANCE.md](QUANTUM_PROVENANCE.md) for the repository-level record.
+Select `Consultar procedencia cuántica` on the landing screen, or `Ver procedencia` after a result. The modal follows the currently selected universe and presents its evidence pipeline, exact facts, integrity reference, and scientific boundaries. Universe #001 identifies direct SamplerV2 and EstimatorV2 evidence. Universes #002–#005 identify direct SamplerV2 evidence and visibly label their CHSH values as a shared reference to #001, not direct EstimatorV2 evidence. See [QUANTUM_PROVENANCE.md](QUANTUM_PROVENANCE.md) for the repository-level record.

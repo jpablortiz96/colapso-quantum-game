@@ -3,8 +3,8 @@
 </p>
 
 <p align="center">
-  <strong>A deterministic puzzle game whose playable universe is compiled from preserved IBM Quantum hardware evidence.</strong><br />
-  Observe uncertain cells, manage a finite resource budget, survive decoherence, and reach the golden exit.
+  <strong>A deterministic five-universe puzzle campaign compiled from preserved IBM Quantum hardware evidence.</strong><br />
+  Choose a universe, observe uncertain cells, manage a finite resource budget, survive decoherence, and reach the golden exit.
 </p>
 
 <p align="center">
@@ -25,11 +25,24 @@
 
 > **Language note:** the player experience is intentionally Spanish (`es-419`). Source code and public engineering documentation are English.
 
+## Five-universe release
+
+COLAPSO turns **five preserved IBM Quantum hardware executions** into **five deterministic, replayable puzzle universes**. The published evidence packs, manifests, hashes, commitments, boards, and resolution plans can be verified entirely offline; playing never submits or retrieves a quantum job.
+
+| Judge link | Destination |
+| --- | --- |
+| **Live demo** | [production.d333fud52cy2ho.amplifyapp.com](https://production.d333fud52cy2ho.amplifyapp.com) |
+| **Public repository** | [github.com/jpablortiz96/colapso-quantum-game](https://github.com/jpablortiz96/colapso-quantum-game) |
+| **Five-minute demo video** | **Coming soon** — follow the exact recording plan in [`DEMO_SCRIPT_5_MIN.md`](DEMO_SCRIPT_5_MIN.md) |
+| **Offline verification** | `npm run release:prepare-offline` |
+
+**Controls:** select cells and visible actions with mouse/touch; move the board cursor with arrow keys or WASD; press Space to select/act, Enter for the primary action, X/H for powers, Q for an Explorer pulse, M for sound, R to restart, `?` for help, and Escape to close dialogs.
+
 ## Play now
 
 **[Launch the production game →](https://production.d333fud52cy2ho.amplifyapp.com)**
 
-No account, wallet, API key, quantum-provider access, or installation is required. The deployed application is a static SPA: once its assets and published universe are loaded, gameplay runs locally in the browser.
+No account, wallet, API key, quantum-provider access, or installation is required. The deployed application is a static SPA: once its assets and published campaign are loaded, gameplay runs locally in the browser.
 
 <p align="center">
   <a href="https://production.d333fud52cy2ho.amplifyapp.com"><img src="docs/media/screenshots/01-hero.webp" alt="COLAPSO production landing screen" width="92%" /></a>
@@ -39,11 +52,11 @@ No account, wallet, API key, quantum-provider access, or installation is require
 
 Many “quantum” games use the word as a visual theme. COLAPSO makes provenance part of the system:
 
-- **A real evidence pack:** preserved SamplerV2 and EstimatorV2 exports from IBM Quantum hardware, with a manifest and SHA-256 checksums.
-- **A compiled universe:** accepted material is expanded through a documented SHA-256 counter-mode construction into a versioned 7×7 board and deterministic resolution plan.
+- **Five preserved hardware inputs:** one direct SamplerV2 execution per universe, plus the preserved Universe #001 EstimatorV2/CHSH record; manifests and SHA-256 checksums bind every public claim.
+- **Five compiled universes:** accepted material is expanded through a documented SHA-256 counter-mode construction into versioned 7×7 boards and deterministic resolution plans.
 - **A pure rules engine:** observation, movement, entanglement policies, decoherence, scoring, serialization, and replay are deterministic F1 rules.
-- **An inspectable client:** the board, resolution plan, evidence references, and integrity commitment are public. COLAPSO does not claim anti-cheat secrecy.
-- **Bounded scientific language:** the repository separates measurements from interpretations and states what the evidence does *not* establish.
+- **An inspectable client:** every board, resolution plan, evidence reference, and integrity commitment is public. COLAPSO does not claim anti-cheat secrecy.
+- **Bounded scientific language:** Universe #001 has direct SamplerV2 and EstimatorV2 provenance; Universes #002–#005 have direct SamplerV2 provenance and explicitly share #001's CHSH reference rather than claiming direct EstimatorV2 evidence.
 
 The game does **not** submit a quantum job for each move. Quantum acquisition happened before publication; the browser consumes preserved, versioned artifacts.
 
@@ -56,13 +69,13 @@ Your observer starts in the lower-left corner. The exit is in the upper-right. M
 3. **Anticipate decoherence:** every fourth turn, the field resolves another possibility on its own.
 4. **Reach the exit** with a replayable action transcript.
 
-Three modes use the same published universe and core rules:
+The landing screen exposes five verified campaign entries with distinct boards, copy, color themes, commitments, and device-local completion progress. Universe #001 is always unlocked; each victory unlocks the next selector entry, and an explicit reset clears campaign progress. Stable direct links `/universe/001` through `/universe/005` remain playable without fabricating prior victories. Quantum Mission, Explorer, and a board-specific audited Guided Journey are available for every universe.
 
-| Mode | Purpose | Presentation |
-| --- | --- | --- |
-| **Quantum Mission** | Canonical challenge | 10 observations, official score, no hints or rewind |
-| **Explorer** | Learn through assisted planning | 13 observations, visible tactical margin, five optional pulses |
-| **Guided Journey** | Follow one audited solution | 23 explicit steps, three rewinds, non-competitive result |
+| Mode | Availability | Purpose | Presentation |
+| --- | --- | --- | --- |
+| **Quantum Mission** | Universes #001–#005 | Canonical challenge | 10 observations, official score, no hints or rewind |
+| **Explorer** | Universes #001–#005 | Learn through assisted planning | 13 observations, visible tactical margin, five optional pulses |
+| **Guided Journey** | Universes #001–#005 | Follow one audited solution for the selected board | 21–23 explicit steps, three rewinds, non-competitive result |
 
 See [Gameplay](docs/GAMEPLAY.md) for controls, resources, powers, accessibility, and mode details.
 
@@ -104,12 +117,22 @@ The cockpit changes presentation only. Observation budgets, powers, score, decoh
   <img src="docs/media/quantum-pipeline.svg" alt="COLAPSO quantum provenance pipeline" width="100%" />
 </p>
 
-The published universe is `colapso-2026-07-22-001`. Its source evidence is preserved under [`evidence/runs/real/real-20260721t205417z`](evidence/runs/real/real-20260721t205417z/).
+The finalized campaign is `colapso-five-hardware-universes-v1`. Its strict offline index is [`evidence/campaign-index.json`](evidence/campaign-index.json), with SHA-256 `bc3cb080daed5c29eaed6caf14cc7fb9ee7a6b2ed6091038e1c67c141755577d`. Five distinct SamplerV2 Job IDs and five distinct preserved results are verified; the project does not infer statistical independence solely from separate jobs.
+
+| # | Title | Direct evidence | CHSH provenance | Published commitment |
+| --- | --- | --- | --- | --- |
+| 001 | Origin Universe | SamplerV2 + EstimatorV2 | Direct | `bcff83aade29774587a84df10a9e168f5828e705728981d4eb8caf4075875579` |
+| 002 | Entangled Paths | SamplerV2 | Shared reference to #001 | `bd5f8c97b66339df9f453c4a527bf6e68654c0472be133170aaf0c30b304cb27` |
+| 003 | The Void Protocol | SamplerV2 | Shared reference to #001 | `be311b3567602eaa3bfd4da7881d5830b9ffc07bad97452e52b3c340d408eebe` |
+| 004 | Energy Crisis | SamplerV2 | Shared reference to #001 | `f8bcf4ff0154c8b4091f01236509046004223ae4ca46e43a7f0836276a5780ae` |
+| 005 | Quantum Storm | SamplerV2 | Shared reference to #001 | `c4cfc1afeb0da6b7223fa1a994bf240883a465d18c9a3acf48234696badf2a56` |
+
+Universe #001 supplies the campaign's fixed CHSH scientific reference from [`evidence/runs/real/real-20260721t205417z`](evidence/runs/real/real-20260721t205417z/):
 
 | Fact | Published value |
 | --- | --- |
 | Hardware backend | `ibm_fez` |
-| Runtime primitives | SamplerV2 and EstimatorV2 |
+| Runtime primitives | Direct SamplerV2 and EstimatorV2 |
 | Accepted entropy material | 1,024 bits |
 | One-basis observed correlation | `0.9140625` from 256 shots |
 | CHSH witness | `2.698628939348193` |
@@ -117,7 +140,6 @@ The published universe is `colapso-2026-07-22-001`. Its source evidence is prese
 | Classical CHSH bound | `2` |
 | Evidence classification | `STATISTICALLY_SUPPORTED_ABOVE_CLASSICAL_LIMIT` |
 | Expansion | SHA-256 counter mode, domain separated |
-| Universe commitment | `bcff83aade29774587a84df10a9e168f5828e705728981d4eb8caf4075875579` |
 
 The in-game provenance panel exposes the same chain and its limitations:
 
@@ -133,6 +155,8 @@ COLAPSO reports preserved measurements; it does not inflate them into broader cl
 
 - The displayed Bell correlation is a **single-basis correlation**. By itself it is not a Bell violation or conclusive entanglement certification.
 - The CHSH witness is reported with propagated uncertainty. It is not presented as device-independent or loophole-free.
+- The CHSH values shown for Universes #002–#005 are an explicit shared reference to Universe #001's EstimatorV2 evidence, not direct EstimatorV2 evidence for those universes.
+- Separate Job IDs establish separate preserved executions; they do not by themselves prove statistical independence.
 - No quantum-advantage claim is made.
 - Tactical “entangled pairs” are deterministic game mechanics; they are not claims about persistent physical qubit pairs.
 - SHA-256 expansion makes accepted source material reproducible; it does not create or certify new physical entropy.
@@ -150,15 +174,15 @@ See [Claims](docs/CLAIMS.md) for the complete claim ledger.
 COLAPSO separates acquisition, compilation, deterministic rules, and presentation:
 
 ```text
-preserved IBM evidence
+preserved IBM evidence (5 Sampler jobs + #001 Estimator/CHSH)
         ↓
-daily-universe compiler → versioned universe JSON + commitment
+campaign compiler → five versioned universe JSON files + commitments
         ↓
 pure TypeScript F1 engine → deterministic state transitions + replay
         ↓
-React presentation → three modes, accessibility, sound, responsive UI
+React presentation → stable routes, persisted progression, five themes, three modes and five audited guides
         ↓
-Vite static build → AWS Amplify Hosting
+Vite static build → operator-deployed AWS Amplify Hosting
 ```
 
 The production runtime has no application backend and no quantum-provider credential. Python tooling under `backend/` creates and verifies evidence offline; the browser never imports it. See [Architecture](docs/ARCHITECTURE.md) for trust boundaries and module ownership.
@@ -182,11 +206,27 @@ npm run dev --workspace frontend
 
 Vite prints the local URL. No IBM or AWS credential is needed to build, test, or play.
 
-### Verification
+### Finalized campaign verification
+
+The complete release candidate can be finalized and validated with one repeatable offline command:
 
 ```bash
+npm run release:finalize-offline
+```
+
+It strictly rechecks preserved evidence, regenerates the five canonical campaign artifacts, runs backend lint/tests and all frontend/repository gates, builds the SPA, and verifies an ignored local Amplify package. It does not contact IBM Quantum or AWS, submit a job, deploy, commit, or push. Once finalization is already recorded, the non-finalizing validation entry point is:
+
+```bash
+npm run release:prepare-offline
+```
+
+Individual gates remain available:
+
+```bash
+npm run verify:campaign-evidence
+npm run campaign:verify
 npm run lint
-npm run test -- --run
+npm run test
 npm run build
 npm run verify:production
 npm run verify:amplify-package
@@ -216,9 +256,10 @@ Simulation output is always labeled simulated. Live submission is optional, cred
 | `frontend/src/engine/` | Pure deterministic game rules and replay contracts |
 | `frontend/src/daily-universe/` | Evidence-to-universe compilation and verification |
 | `frontend/src/components/` | Spanish player experience and accessible controls |
-| `frontend/public/data/universes/` | Published universe index and immutable artifact |
+| `frontend/public/data/universes/` | Five immutable universe artifacts plus campaign/index manifests |
 | `backend/src/colapso_quantum/` | Qiskit evidence, provider, and provenance tooling |
-| `evidence/runs/real/` | Preserved real-hardware evidence packs |
+| `evidence/campaign-index.json` | Strict five-execution campaign inventory and limitations |
+| `evidence/runs/real/`, `evidence/universe-*` | Preserved real-hardware evidence packs |
 | `evidence/runs/simulated/` | Explicitly labeled local simulation evidence |
 | `deployment/aws-amplify/` | Reproducible static packaging, deployment, and verification |
 | `docs/` | Architecture, claims, gameplay, provenance, and operations |

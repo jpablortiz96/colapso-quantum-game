@@ -32,7 +32,7 @@ A pack preserves raw exports before derived records, plus a manifest, provenance
 
 Location: `frontend/src/daily-universe/`
 
-The compiler accepts a verified evidence pack and produces a versioned `DailyUniverse` artifact. The artifact contains:
+The compiler accepts verified evidence and produces versioned `DailyUniverse` artifacts plus a strict `CampaignBundle`. Each universe artifact contains:
 
 - source-evidence identifiers and hashes;
 - accepted entropy metadata;
@@ -44,7 +44,7 @@ The compiler accepts a verified evidence pack and produces a versioned `DailyUni
 
 Accepted source material is expanded with domain-separated SHA-256 counter mode. Expansion is reproducible; it does not create or certify additional physical entropy.
 
-Published artifacts live in `frontend/public/data/universes/`. The current client intentionally publishes the resolution plan and therefore makes no anti-cheat or hidden-randomness claim.
+Published artifacts live in `frontend/public/data/universes/`: five dated universe JSON files, `campaign.json`, and `index.json`. The campaign verifier fails closed unless all five entries have verified evidence, unique commitments, correct primitive provenance, and canonical output. Universe #001 remains byte-pinned for compatibility; its published source bytes are not regenerated or rewritten by campaign finalization. The client intentionally publishes every resolution plan and therefore makes no anti-cheat or hidden-randomness claim.
 
 ### 3. F1 deterministic engine
 
@@ -72,7 +72,7 @@ Locations:
 - `frontend/src/components/` — player interface
 - `frontend/src/production/` — safe preferences and runtime status
 
-The Zustand store deserializes the published state, creates a fresh deterministic entropy source from the universe resolution plan, and records an action transcript. Quantum Mission, Explorer, and Guided Journey adjust presentation budgets and assistance; they do not replace the F1 rules.
+The Zustand store validates the finalized campaign, selects one playable universe, deserializes its published state, creates a fresh deterministic entropy source from that universe's resolution plan, and records an action transcript. Selection, retry, reset, routes, victory progression, and gameplay never call a provider or network API. Selector access unlocks sequentially, while `/universe/001` through `/universe/005` remain stable playable deep links without fabricating prior victories. Quantum Mission, Explorer, and a commitment-bound Guided Journey operate across all five entries; each guide uses its own audited 21- or 23-action transcript and F1 replay.
 
 The UI is Spanish (`es-419`) and provides semantic controls, focus-managed dialogs, keyboard navigation, reduced-motion support, responsive layouts, optional sound, and visual status channels.
 
@@ -93,14 +93,15 @@ Local deployment state, staging directories, and release ZIP files are ignored a
 ## Runtime data flow
 
 ```text
-GET /data/universes/index.json
-  → select current universe artifact
-  → validate and deserialize F1 initial state
-  → create resolution entropy source from published plan
+bundled published-campaign.json (canonically equal to public campaign.json)
+  → validate five finalized entries and provenance kinds
+  → select a playable universe artifact
+  → validate and deserialize its F1 initial state
+  → create a resolution entropy source from its published plan
   → player action
   → F1 processAction(state, action, entropy)
   → next immutable state + typed events
-  → presentation derives feedback, metrics, sound, and animation
+  → presentation derives feedback, progress, metrics, sound, and animation
   → transcript can be replayed against the same artifact
 ```
 
@@ -121,11 +122,11 @@ There is no runtime path from the browser to IBM Quantum or AWS APIs.
 
 Determinism is scoped precisely: given the same rules version, universe artifact, initial state, resolution plan, and ordered actions, F1 produces the same serialized result. Visual timing, sound playback, and browser layout are not replay inputs.
 
-The Guided Journey is a fixed 23-action transcript for Universe #001 with its own SHA-256 reference. It demonstrates one valid solution, not the only strategy.
+The five Guided Journeys are fixed, commitment-bound transcripts with their own SHA-256 references: 23 actions for #001–#003 and 21 for #004–#005. Each demonstrates one valid solution for its selected board, not the only strategy.
 
 ## Security model
 
-The production client is public and inspectable. It contains no IBM token, AWS credential, private API, personal data, or server-side secret. Browser storage contains only versioned local preferences: mute, reduced-motion choice, tutorial completion, last mode, and audio consent.
+Browser storage is split into two strict records. Presentation preferences contain only mute, reduced-motion choice, tutorial completion, last mode, and audio consent. Campaign progress contains only completed universe numbers; explicit reset removes it. F1 state, score, transcript, board data, outcomes, commitments, and credentials are never persisted.
 
 This model supports reproducibility and education, not competitive anti-cheat. A future leaderboard would require server-side transcript validation and a different disclosure model.
 
@@ -142,4 +143,4 @@ The evidence layer records measurements and uncertainty. Game semantics consume 
 - AWS Amplify static hosting via AWS CLI v2 and PowerShell
 - GitHub Actions on Node 24
 
-Dependency versions are pinned in lockfiles; this document describes the current public release rather than a future architecture.
+Dependency versions are pinned in lockfiles; this document describes the finalized five-universe release candidate rather than a future architecture. Deployment remains an explicit operator action.
